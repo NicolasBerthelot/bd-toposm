@@ -1,0 +1,60 @@
+layer: troncon_de_voie_ferree
+description: >-
+  Réseau ferré. Comme la route et l'hydrographie, déjà topologique. Mesures sur
+  le département 86, 1 108 tronçons — dont la LGV Sud Europe Atlantique.
+
+report_key: railway
+
+rules:
+
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+
+  - first_match:
+
+      # `nature = "Sans objet"` recouvre exactement les 219 tronçons dont
+      # `etat_de_l_objet` vaut « Non exploité » : ce sont les lignes déclassées.
+      - when: {etat_de_l_objet: Non exploité}
+        set: {railway: disused}
+
+      - when: {nature: LGV}
+        set: {railway: rail, highspeed: "yes", usage: main}
+
+      - when: {nature: Voie ferrée principale}
+        set: {railway: rail, usage: main}
+
+      # Voie de service : desserte technique, triage, embranchement.
+      - when: {nature: Voie de service}
+        set: {railway: rail, service: siding}
+
+      - when: {}
+        set: {railway: rail}
+
+  - set:
+      electrified: {from: electrifie, map: {true: contact_line, false: "no"}}
+      tracks: {from: nombre_de_voies, drop_values: [0]}
+      name: {from: cpx_toponyme}
+      usage: {from: usage, map: {Fret: freight}}
+
+  - set:
+      bridge:
+        from: position_par_rapport_au_sol
+        map: {1: "yes", 2: "yes", 3: "yes", 4: "yes"}
+      tunnel:
+        from: position_par_rapport_au_sol
+        map: {-1: "yes", -2: "yes", -3: "yes", -4: "yes"}
+      layer:
+        from: position_par_rapport_au_sol
+        map: {-4: "-4", -3: "-3", -2: "-2", -1: "-1", 1: "1", 2: "2", 3: "3", 4: "4"}
+
+  # Vélo-rail : usage touristique sur voie ferrée désaffectée (19 tronçons).
+  - when: {usage: Vélo-rail}
+    set: {railway: disused, tourism: attraction}
+
+unmapped:
+  largeur: Toujours « Normale » (écartement standard) dans la Vienne.
+  vitesse_maximale: Vide.
+  liens_vers_voie_ferree_nommee: >-
+    Rattachement à la ligne nommée. Le toponyme est déjà repris via
+    `cpx_toponyme` ; les relations `type=route` sont à traiter séparément.

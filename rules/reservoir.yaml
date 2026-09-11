@@ -1,0 +1,35 @@
+layer: reservoir
+description: >-
+  Réservoirs et châteaux d'eau, en emprise. 831 entités dans la Vienne.
+
+report_key: man_made
+
+rules:
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+
+  - first_match:
+      - when: {nature: Château d'eau}
+        set: {man_made: water_tower, building: "yes"}
+      - when: {nature: Réservoir d'eau ou château d'eau au sol}
+        set: {man_made: storage_tank, content: water}
+      - when: {nature: Réservoir industriel}
+        set: {man_made: storage_tank}
+      - when: {}
+        set: {man_made: storage_tank}
+
+  - set:
+      height: {from: hauteur, decimals: 1, drop_values: [0]}
+      "source:geometry":
+        from: origine_du_batiment
+        map: {Cadastre: cadastre, Imagerie aérienne: aerial_imagery, Lidar HD: lidar, Autre: other}
+      "bdtopo:nature": {from: nature}
+
+unmapped:
+  etat_de_l_objet: Non discriminant sur cette couche.
+  volume: Vide dans la Vienne.
+  altitude_minimale_sol: Altimétrie — la dimension Z est supprimée à la conversion.
+  altitude_minimale_toit: Idem.
+  altitude_maximale_toit: Idem ; `height` porte déjà la hauteur.
+  altitude_maximale_sol: Idem.

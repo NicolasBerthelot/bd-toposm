@@ -1,0 +1,101 @@
+layer: troncon_hydrographique
+description: >-
+  Réseau hydrographique linéaire. Comme le réseau routier, il est déjà
+  topologique — les tronçons partagent leurs extrémités. La classe OSM se déduit
+  de `classe_de_largeur` (rivière au-delà de 5 m, ruisseau en deçà), `fosse` et
+  `nature` prenant le pas quand ils sont renseignés. Mesures sur le département
+  86, 42 310 tronçons.
+
+report_key: waterway
+
+drop:
+  - when: {etat_de_l_objet: Disparu}
+    reason: >-
+      Cours d'eau qui n'existe plus sur le terrain (13 entités dans la Vienne).
+
+rules:
+
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+
+  # ------------------------------------------------- classification du cours
+  - first_match:
+
+      # Un fossé reste un fossé quelle que soit sa largeur : la nature de
+      # l'ouvrage l'emporte sur la classe dimensionnelle.
+      - when: {fosse: true}
+        set: {waterway: ditch}
+
+      - when: {nature: Canal}
+        set: {waterway: canal}
+
+      # Un aqueduc est un canal porté par un ouvrage d'art.
+      - when: {nature: Aqueduc}
+        set: {waterway: canal, bridge: aqueduct}
+
+      # `classe_de_largeur` est le seul critère dimensionnel disponible.
+      # Le seuil OSM usuel entre `stream` et `river` se situe vers 5 m, ce qui
+      # tombe exactement sur une borne de la nomenclature IGN.
+      - when: {classe_de_largeur: [Plus de 50 m, Entre 15 et 50 m, Entre 5 et 15 m]}
+        set: {waterway: river}
+
+      - when: {}
+        set: {waterway: stream}
+
+  # --------------------------------------------------------------- ouvrages
+  # « Conduit buse » : écoulement busé sous un remblai ou une voirie.
+  - when: {nature: Conduit buse}
+    set: {tunnel: culvert, layer: "-1"}
+
+  - set:
+      tunnel:
+        from: position_par_rapport_au_sol
+        map: {-1: culvert, -2: culvert, -3: culvert, -4: culvert}
+      bridge:
+        from: position_par_rapport_au_sol
+        map: {1: "yes", 2: "yes", 3: "yes", 4: "yes"}
+      layer:
+        from: position_par_rapport_au_sol
+        map: {-4: "-4", -3: "-3", -2: "-2", -1: "-1", 1: "1", 2: "2", 3: "3", 4: "4"}
+
+  # -------------------------------------------------------------- régime
+  # 26 351 tronçons sur 42 310 sont intermittents dans la Vienne : c'est la
+  # majorité du réseau, et l'omettre donnerait une image très fausse du bocage.
+  - set:
+      intermittent: {from: persistance, map: {Intermittent: "yes"}}
+      name: {from: cpx_toponyme_de_cours_d_eau}
+      "bdtopo:fictif": {from: fictif, map: {true: "yes"}}
+      "bdtopo:nature": {from: nature}
+
+unmapped:
+  code_hydrographique: Identifiant du référentiel hydrographique ; `ref:FR:IGN:cleabs` suffit à la traçabilité.
+  navigabilite: Faux partout dans la Vienne ; candidat `boat=yes` ailleurs.
+  salinite: Faux partout (département sans façade maritime).
+  numero_d_ordre: Ordre de Strahler — information de réseau, sans tag OSM établi.
+  strategie_de_classement: Vide.
+  origine: >-
+    Naturel / artificiel. Recoupe déjà `waterway=canal` et `ditch` pour les cas
+    où OSM fait la distinction ; l'exposer ailleurs n'apporterait rien.
+  perimetre_d_utilisation_ou_origine: Métadonnée de périmètre de diffusion.
+  sens_de_l_ecoulement: >-
+    Toujours « Sens direct » : l'écoulement suit la numérisation, ce qu'OSM
+    considère comme acquis pour un `waterway`.
+  reseau_principal_coulant: Classification de réseau interne.
+  trace_connu: Indicateur de qualité du tracé.
+  type_de_bras: >-
+    Principal / Secondaire. Candidat `waterway=side_channel`, mais 16 195 des
+    42 310 sont « Inconnu » — trop incertain pour trancher.
+  commentaire_sur_l_objet_hydro: Note de saisie libre (27 entités).
+  code_du_cours_d_eau_bdcarthage: Identifiant d'un référentiel antérieur.
+  inventaire_police_de_l_eau: Statut réglementaire, hors modèle OSM.
+  identifiant_police_de_l_eau: Idem.
+  liens_vers_cours_d_eau: >-
+    Rattachement au cours d'eau nommé. Le toponyme est déjà repris via
+    `cpx_toponyme_de_cours_d_eau` ; construire les relations `type=waterway`
+    demanderait de regrouper les tronçons — à traiter avec les relations.
+  lien_vers_noeud_hydrographique_ini: Topologie de réseau, déjà portée par le partage de nœuds.
+  lien_vers_noeud_hydrographique_fin: Idem.
+  liens_vers_surface_hydrographique: Rattachement à la surface en eau correspondante.
+  lien_vers_entite_de_transition: Vide (entités estuariennes).
+  cpx_toponyme_d_entite_de_transition: Vide.

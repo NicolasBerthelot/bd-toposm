@@ -1,0 +1,16 @@
+layer: poste_de_transformation
+description: >-
+  Postes électriques (emprises), 67 dans la Vienne.
+
+report_key: power
+
+rules:
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+      power: substation
+      name: {from: toponyme}
+
+unmapped:
+  importance: Hiérarchie d'affichage cartographique, sans équivalent OSM.
+  etat_de_l_objet: Non discriminant sur cette couche.

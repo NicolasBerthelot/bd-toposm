@@ -1,0 +1,277 @@
+layer: batiment
+description: >-
+  Bâti BD Topo 3.5 → OSM. La classification `building` croise `nature` (la forme
+  ou le caractère remarquable) et `usage_1` (la fonction). `nature` prime quand
+  elle est spécifique (Église, Château, Serre…), `usage_1` prend le relais pour
+  les 90 % de bâtiments « Indifférenciée ». Mesures sur le département 86,
+  777 481 bâtiments.
+
+report_key: building
+
+drop: []
+
+rules:
+
+  # ---------------------------------------------------------------- provenance
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+      "ref:FR:RNB": {from: identifiants_rnb}
+      "source:geometry":
+        from: origine_du_batiment
+        map:
+          Cadastre: cadastre
+          Imagerie aérienne: aerial_imagery
+          Lidar HD: lidar
+          Autre: other
+
+  # ------------------------------------------------------ classification bâti
+  - first_match:
+
+      # 1. État : écrase la classification fonctionnelle.
+      - when: {etat_de_l_objet: En construction}
+        set: {building: construction}
+
+      - when: {etat_de_l_objet: En ruine}
+        set: {building: ruins}
+
+      # 2. Natures remarquables : la forme du bâtiment est décisive.
+      - when: {nature: Eglise}
+        set: {building: church}
+
+      - when: {nature: Chapelle}
+        set: {building: chapel}
+
+      - when: {nature: Château}
+        set: {building: castle, historic: castle}
+
+      - when: {nature: "Fort, blockhaus, casemate"}
+        set: {building: bunker}
+
+      - when: {nature: "Tour, donjon"}
+        set: {building: tower}
+
+      - when: {nature: Moulin à vent}
+        set: {building: "yes", man_made: windmill}
+
+      - when: {nature: Serre}
+        set: {building: greenhouse}
+
+      - when: {nature: Silo}
+        set: {building: silo}
+
+      - when: {nature: Tribune}
+        set: {building: grandstand}
+
+      - when: {nature: [Monument, Arc de triomphe]}
+        set: {building: "yes", historic: monument}
+
+      - when: {nature: Arène ou théâtre antique}
+        set: {building: "yes", historic: amphitheatre}
+
+      # 3. Résidentiel : `nombre_de_logements` tranche entre maison et immeuble.
+      #    229 978 résidentiels à exactement 1 logement contre 13 207 à 2 et
+      #    plus — la distinction est solidement étayée par la source.
+      - when: {usage_1: Résidentiel, nombre_de_logements: 1}
+        set: {building: house}
+
+      - when: {usage_1: Résidentiel, nombre_de_logements: {gte: 2}}
+        set: {building: apartments}
+
+      - when: {usage_1: Résidentiel}
+        set: {building: residential}
+
+      # 4. Annexes (84 121, soit 10,8 %). OSM n'a pas de valeur consensuelle pour
+      #    « annexe », qui recouvre indistinctement garages, remises et abris.
+      #    `construction_legere` permet au moins d'isoler les abris légers ; le
+      #    reste sort en `building=yes` avec l'usage source préservé, plutôt
+      #    qu'en valeur inventée.
+      - when: {usage_1: Annexe, construction_legere: true}
+        set: {building: shed}
+
+      - when: {usage_1: Annexe}
+        set: {building: "yes"}
+
+      - when: {usage_1: Commercial et services}
+        set: {building: commercial}
+
+      - when: {usage_1: Industriel}
+        set: {building: industrial}
+
+      - when: {usage_1: Agricole}
+        set: {building: farm_auxiliary}
+
+      - when: {usage_1: Religieux}
+        set: {building: religious}
+
+      - when: {usage_1: Sportif}
+        set: {building: sports_hall}
+
+      # 5. `Industriel, agricole ou commercial` sans usage précisé (32 994).
+      #    La nature exclut le résidentiel mais ne tranche pas entre trois
+      #    fonctions qui ont des valeurs OSM distinctes. Choisir l'une d'elles
+      #    serait fabriquer de l'information : on reste générique et on conserve
+      #    la nature source, requalifiable.
+      - when: {nature: "Industriel, agricole ou commercial"}
+        set: {building: "yes"}
+
+      - when: {}
+        set: {building: "yes"}
+
+  # ------------------------------------------------- lieu de culte en service
+  # `nature` donne la forme du bâtiment, `usage_1` atteste l'usage courant :
+  # c'est la conjonction des deux qui justifie `amenity`, pas la forme seule.
+  - when:
+      all_of:
+        - {nature: [Eglise, Chapelle]}
+        - {usage_1: Religieux}
+    set: {amenity: place_of_worship, religion: christian}
+
+  # ----------------------------------------------------------------- métrique
+  - set:
+      height: {from: hauteur, decimals: 1}
+      "building:levels": {from: nombre_d_etages}
+      "building:flats": {from: nombre_de_logements, drop_values: [0]}
+
+  # ------------------------------------------------------------- matériaux
+  # Codes MAJIC des fichiers fonciers, repris tels quels par la BD Topo.
+  # Structure : le PREMIER chiffre porte le matériau dominant, le second un
+  # matériau secondaire (12 = pierre dominante + meulière) ; les codes `0X`
+  # sont le cas mono-matériau. OSM n'ayant qu'une valeur par clé, seul le
+  # dominant est émis — le secondaire est perdu, c'est assumé.
+  # Les codes INDÉTERMINÉ (0, 00) et AUTRES (9, 09, 9X) ne produisent aucun
+  # tag : ils ne portent pas d'information exploitable.
+  # Nomenclature DMATGM / DMATTO :
+  #   https://piece-jointe-carto.developpement-durable.gouv.fr/NAT004/DTerNP/html3/annexes/desc_pb40_pevprincipale_dmatgm.html
+  #   https://doc-datafoncier.cerema.fr/doc/guide/ff/dmatgm-dmatto-materiaux-des-murs-et-des-toits
+  # Clés impérativement entre guillemets : sans cela PyYAML lirait "01" comme
+  # un entier octal et la correspondance échouerait silencieusement.
+  - set:
+      "building:material":
+        from: materiaux_des_murs
+        map:
+          # PIERRE (1X) et MEULIÈRE (2X) : OSM n'a pas de valeur pour la
+          # meulière, `stone` couvre les deux.
+          "1": stone
+          "01": stone
+          "10": stone
+          "11": stone
+          "12": stone
+          "13": stone
+          "14": stone
+          "15": stone
+          "16": stone
+          "19": stone
+          "2": stone
+          "02": stone
+          "20": stone
+          "21": stone
+          "22": stone
+          "23": stone
+          "24": stone
+          "25": stone
+          "26": stone
+          "29": stone
+          "3": concrete
+          "03": concrete
+          "30": concrete
+          "31": concrete
+          "32": concrete
+          "33": concrete
+          "34": concrete
+          "35": concrete
+          "36": concrete
+          "39": concrete
+          "4": brick
+          "04": brick
+          "40": brick
+          "41": brick
+          "42": brick
+          "43": brick
+          "44": brick
+          "45": brick
+          "46": brick
+          "49": brick
+          # AGGLOMÉRÉ = parpaing → `cement_block`.
+          "5": cement_block
+          "05": cement_block
+          "50": cement_block
+          "51": cement_block
+          "52": cement_block
+          "53": cement_block
+          "54": cement_block
+          "55": cement_block
+          "56": cement_block
+          "59": cement_block
+          "6": wood
+          "06": wood
+          "60": wood
+          "61": wood
+          "62": wood
+          "63": wood
+          "64": wood
+          "65": wood
+          "66": wood
+          "69": wood
+      "roof:material":
+        from: materiaux_de_la_toiture
+        map:
+          "1": roof_tiles
+          "01": roof_tiles
+          "10": roof_tiles
+          "11": roof_tiles
+          "12": roof_tiles
+          "13": roof_tiles
+          "14": roof_tiles
+          "19": roof_tiles
+          "2": slate
+          "02": slate
+          "20": slate
+          "21": slate
+          "22": slate
+          "23": slate
+          "24": slate
+          "29": slate
+          # ZINC / ALUMINIUM → `metal`, OSM ne distinguant pas l'alliage.
+          "3": metal
+          "03": metal
+          "30": metal
+          "31": metal
+          "32": metal
+          "33": metal
+          "34": metal
+          "39": metal
+          "4": concrete
+          "04": concrete
+          "40": concrete
+          "41": concrete
+          "42": concrete
+          "43": concrete
+          "44": concrete
+          "49": concrete
+
+  # ------------------------------------------------ conservé sous préfixe IGN
+  - set:
+      "bdtopo:nature": {from: nature, drop_values: [Indifférenciée]}
+      "bdtopo:usage": {from: usage_1, drop_values: [Indifférencié]}
+      "bdtopo:usage_2": {from: usage_2, drop_values: [Indifférencié]}
+      "bdtopo:construction_legere": {from: construction_legere, map: {true: "yes"}}
+
+unmapped:
+  altitude_minimale_sol: Altimétrie — la dimension Z est supprimée à la conversion.
+  altitude_minimale_toit: Idem.
+  altitude_maximale_toit: Idem ; `height` porte déjà la hauteur du bâtiment.
+  altitude_maximale_sol: Idem.
+  appariement_fichiers_fonciers: >-
+    Indicateur de qualité de l'appariement (lettre + score). Métadonnée de
+    production, sans équivalent OSM.
+  date_creation: Métadonnée de production IGN, sans équivalent OSM.
+  date_modification: Idem.
+  date_d_apparition: Idem.
+  date_de_confirmation: Idem.
+  sources: Provenance interne IGN ; `source` porte déjà l'attribution.
+  identifiants_sources: Identifiants du producteur amont.
+  methode_d_acquisition_planimetrique: Qualité de saisie, hors modèle OSM.
+  methode_d_acquisition_altimetrique: Idem.
+  precision_planimetrique: Idem.
+  precision_altimetrique: Idem.

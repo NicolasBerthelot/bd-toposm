@@ -1,0 +1,112 @@
+# Abréviations FANTOIR des types de voie, telles qu'on les trouve dans
+# `nom_collaboratif_*` de la BD Topo (97,3 % des valeurs sont en majuscules
+# abrégées). OSM demande des noms développés : « Rue du Haut des Sables »,
+# pas « R DU HAUT DES SABLES ».
+#
+# Les clés sont comparées en majuscules sur le PREMIER mot du toponyme
+# uniquement — « ALL » en tête est « Allée », mais au milieu d'un nom ce
+# pourrait être autre chose. Un mot non listé est laissé intact : mieux vaut
+# un type de voie non développé qu'une expansion fausse.
+#
+# Attention aux faux amis du Poitou : CHEZ, LA, LE, LES, GRAND sont des mots
+# du toponyme, pas des abréviations — ils ne figurent donc pas ici.
+
+types_de_voie:
+  ALL: Allée
+  ANSE: Anse
+  AV: Avenue
+  BD: Boulevard
+  CAR: Carrefour
+  CHE: Chemin
+  CHEM: Chemin
+  CHS: Chaussée
+  CITE: Cité
+  COR: Corniche
+  COUR: Cour
+  CRS: Cours
+  DOM: Domaine
+  DSC: Descente
+  ECA: Écart
+  ESP: Esplanade
+  FG: Faubourg
+  HAM: Hameau
+  HLE: Halle
+  IMP: Impasse
+  JARD: Jardin
+  LD: Lieu-dit
+  LOT: Lotissement
+  MAIL: Mail
+  MAR: Marché
+  MTE: Montée
+  PAS: Passage
+  PKG: Parking
+  PL: Place
+  PLN: Plaine
+  PLT: Plateau
+  PONT: Pont
+  PORT: Port
+  PRO: Promenade
+  PROM: Promenade
+  PRV: Parvis
+  PTE: Porte
+  QUA: Quartier
+  QU: Quai
+  QUAI: Quai
+  R: Rue
+  RES: Résidence
+  RLE: Ruelle
+  ROC: Rocade
+  RPT: Rond-point
+  RTE: Route
+  RUE: Rue
+  SEN: Sente
+  SENT: Sentier
+  SQ: Square
+  TPL: Terre-plein
+  TRA: Traverse
+  TSSE: Terrasse
+  VEN: Venelle
+  VLA: Villa
+  VLGE: Village
+  VOI: Voie
+  ZA: Zone d'Activité
+  ZAC: Zone d'Aménagement Concerté
+  ZI: Zone Industrielle
+
+# Abréviations développées où qu'elles apparaissent dans le nom.
+partout:
+  ST: Saint
+  STE: Sainte
+  STS: Saints
+  STES: Saintes
+  GDE: Grande
+  GD: Grand
+  MAL: Maréchal
+  GAL: Général
+  CDT: Commandant
+  CAP: Capitaine
+  COL: Colonel
+  PDT: Président
+  DR: Docteur
+  PR: Professeur
+
+# Mots laissés en minuscules sauf en tête de nom (usage typographique français).
+particules:
+  - de
+  - du
+  - des
+  - d
+  - la
+  - le
+  - les
+  - l
+  - à
+  - au
+  - aux
+  - et
+  - en
+  - sur
+  - sous
+  - lès
+  - dit
+  - vers

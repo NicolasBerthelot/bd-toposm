@@ -1,0 +1,17 @@
+.venv/
+__pycache__/
+*.egg-info/
+
+# Build d'iD récupéré depuis la branche `release` du dépôt amont (72 Mo).
+# Voir le README pour la commande de récupération.
+web/id/
+
+# Sorties de conversion
+export/
+*.osm
+*.db
+*.db-wal
+*.db-shm
+
+# Base de démonstration embarquée dans l'image (suivie via Git LFS)
+!demo/poitiers.db

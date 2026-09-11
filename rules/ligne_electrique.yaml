@@ -1,0 +1,24 @@
+layer: ligne_electrique
+description: >-
+  Lignes électriques haute tension (réseau de transport RTE). 213 tronçons
+  dans la Vienne. Les pylônes (couche `pylone`) en sont les sommets : leur
+  `point_mode: shared` les greffe sur ces lignes.
+
+report_key: power
+
+rules:
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+      power: line
+      # Tension : OSM attend des volts. « <63 kV » n'a pas de valeur exacte et
+      # reste sous préfixe.
+      voltage:
+        from: voltage
+        map: {"400 kV": "400000", "225 kV": "225000", "90 kV": "90000"}
+      "bdtopo:voltage": {from: voltage, map: {"<63 kV": "<63 kV"}}
+      operator: {from: gestionnaire}
+      "operator:siren": {from: siren_gestionnaire}
+
+unmapped:
+  etat_de_l_objet: Toujours « En service » dans la Vienne.

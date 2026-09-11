@@ -1,0 +1,79 @@
+layer: surface_hydrographique
+description: >-
+  Surfaces en eau. La couche `plan_d_eau` (1 403 entités) n'est pas convertie :
+  c'est une agrégation toponymique bâtie sur ces mêmes surfaces, et la reprendre
+  dupliquerait les polygones. Son toponyme est déjà disponible ici via
+  `cpx_toponyme_de_plan_d_eau`. Mesures sur le département 86, 27 911 surfaces.
+
+report_key: water
+
+rules:
+
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+
+  # ------------------------------------------------------ nature de la surface
+  - first_match:
+
+      - when: {nature: Marais}
+        set: {natural: wetland, wetland: marsh}
+
+      - when: {nature: [Lac, Plan d'eau de gravière]}
+        set: {natural: water, water: lake}
+
+      - when: {nature: [Retenue-barrage, Retenue-bassin portuaire]}
+        set: {natural: water, water: reservoir}
+
+      - when: {nature: Réservoir-bassin piscicole}
+        set: {natural: water, water: fish_pond}
+
+      # Bassins techniques : `landuse=basin` décrit l'ouvrage, `natural=water`
+      # décrirait l'eau — ici c'est bien l'ouvrage qui est cartographié.
+      - when: {nature: Réservoir-bassin d'orage}
+        set: {landuse: basin, basin: detention}
+
+      - when: {nature: Réservoir-bassin}
+        set: {landuse: basin}
+
+      - when: {nature: Canal}
+        set: {natural: water, water: canal}
+
+      # Élargissement d'un cours d'eau : la surface accompagne le tronçon.
+      - when: {nature: [Ecoulement naturel, Ecoulement canalisé, Conduit buse]}
+        set: {natural: water, water: river}
+
+      # « Retenue » (15 876) et « Mare » (7 057) sont l'essentiel du bocage
+      # poitevin : petites pièces d'eau, très majoritairement artificielles.
+      - when: {}
+        set: {natural: water, water: pond}
+
+  - set:
+      intermittent: {from: persistance, map: {Intermittent: "yes"}}
+      name: {from: cpx_toponyme_de_plan_d_eau}
+      "bdtopo:nature": {from: nature}
+      # `En construction` sur une seule entité : signalé plutôt qu'écarté.
+      "bdtopo:etat": {from: etat_de_l_objet, drop_values: [En service]}
+
+  - set:
+      layer:
+        from: position_par_rapport_au_sol
+        map: {-1: "-1"}
+      tunnel:
+        from: position_par_rapport_au_sol
+        map: {-1: culvert}
+
+unmapped:
+  code_hydrographique: Identifiant du référentiel hydrographique.
+  salinite: Nul partout (département sans façade maritime).
+  origine: >-
+    Naturel / artificiel. 20 048 surfaces sur 27 911 sont artificielles ; OSM
+    n'a pas de tag consensuel pour cette distinction sur une pièce d'eau.
+  commentaire_sur_l_objet_hydro: Vide.
+  liens_vers_plan_d_eau: >-
+    Rattachement à l'agrégation toponymique `plan_d_eau`, volontairement non
+    convertie (elle dupliquerait ces mêmes polygones).
+  liens_vers_cours_d_eau: Vide.
+  lien_vers_entite_de_transition: Vide.
+  cpx_toponyme_de_cours_d_eau: Vide sur cette couche.
+  cpx_toponyme_d_entite_de_transition: Vide.

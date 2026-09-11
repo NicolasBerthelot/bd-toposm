@@ -1,0 +1,22 @@
+layer: aerodrome
+description: >-
+  Aérodromes et héliports, en emprise. 21 dans la Vienne, dont l'aéroport de
+  Poitiers-Biard.
+
+report_key: aeroway
+
+rules:
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+      name: {from: toponyme}
+      aeroway: {from: nature, map: {Aérodrome: aerodrome, Héliport: heliport}}
+      "aerodrome:type": {from: categorie, map: {Internationale: international, Nationale: regional}}
+      access: {from: usage, map: {Privé: private}}
+      icao: {from: code_icao}
+      iata: {from: code_iata}
+      ele: {from: altitude, decimals: 0}
+      "bdtopo:fictif": {from: fictif, map: {true: "yes"}}
+
+unmapped:
+  etat_de_l_objet: Toujours « En service » dans la Vienne.

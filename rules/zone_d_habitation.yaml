@@ -1,0 +1,66 @@
+layer: zone_d_habitation
+description: >-
+  Lieux habités, en polygones. OSM place plutôt ces objets sur des nœuds, mais
+  la BD Topo en donne l'emprise et `place=*` s'applique aussi à une surface.
+  Mesures sur le département 86, 23 853 zones.
+
+report_key: place
+
+rules:
+
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+      name: {from: toponyme}
+
+  - first_match:
+
+      # Bâti remarquable décrit ici comme lieu-dit : c'est le monument qui
+      # donne son nom au lieu, pas une agglomération.
+      - when: {nature_detaillee: [Château ruiné, Tour ruinée, Eglise ruinée]}
+        set: {historic: ruins}
+
+      - when: {nature: Ruines}
+        set: {historic: ruins}
+
+      - when: {nature_detaillee: Château fort}
+        set: {historic: castle, castle_type: defensive}
+
+      - when: {nature: Château}
+        set: {historic: castle}
+
+      - when: {nature: Quartier, nature_detaillee: Quartier urbain}
+        set: {place: suburb}
+
+      - when: {nature: Quartier}
+        set: {place: neighbourhood}
+
+      # Moulin (235) et Grange (22) : OSM n'a pas de valeur consensuelle pour
+      # ces lieux-dits bâtis, et la source ne dit pas s'il s'agit d'un moulin à
+      # vent ou à eau. On reste sur le toponyme et on conserve la nature.
+      - when: {nature: [Moulin, Grange]}
+        set: {place: locality}
+
+      # « Lieu-dit habité » : 22 061 des 23 853 zones. `importance` est le seul
+      # critère de hiérarchie disponible.
+      #
+      # Cette calibration mérite un regard : elle décide de ce qui s'affiche
+      # comme village ou comme simple écart, et le bocage poitevin compte
+      # énormément de hameaux minuscules.
+      - when: {}
+        set:
+          place:
+            from: importance
+            map: {1: town, 2: village, 3: village, 4: hamlet, 5: isolated_dwelling, 6: isolated_dwelling}
+            default: locality
+
+  - set:
+      "bdtopo:nature": {from: nature, drop_values: [Lieu-dit habité]}
+      "bdtopo:nature_detaillee": {from: nature_detaillee}
+      "bdtopo:fictif": {from: fictif, map: {true: "yes"}}
+
+unmapped:
+  importance: >-
+    Consommé par la matrice `place` ci-dessus ; le déclarer ici évite de
+    laisser croire qu'il serait exporté tel quel.
+  etat_de_l_objet: Toujours « En service » sur cette couche dans la Vienne.

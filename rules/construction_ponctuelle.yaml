@@ -1,0 +1,50 @@
+layer: construction_ponctuelle
+description: >-
+  Constructions ponctuelles remarquables : croix, antennes, clochers,
+  éoliennes. Mesures sur le département 86, 4 161 points.
+
+report_key: man_made
+point_mode: standalone
+
+rules:
+
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+      name: {from: toponyme}
+
+  - first_match:
+      - when: {nature: Croix}
+        set: {historic: wayside_cross}
+      - when: {nature: Calvaire}
+        set: {historic: wayside_cross, wayside_cross: calvary}
+      - when: {nature: Antenne}
+        set: {man_made: mast, tower:type: communication}
+      - when: {nature: Eolienne}
+        set: {power: generator, generator:source: wind, generator:method: wind_turbine}
+      # Un clocher isolé, hors emprise d'église : la BD Topo le distingue
+      # comme point remarquable. `man_made=tower` + `tower:type=bell_tower`.
+      - when: {nature: Clocher}
+        set: {man_made: tower, tower:type: bell_tower}
+      - when: {nature: Minaret}
+        set: {man_made: tower, tower:type: minaret}
+      - when: {nature: Cheminée}
+        set: {man_made: chimney}
+      # « Transformateur » ponctuel : poste sur poteau ou cabine, à distinguer
+      # des emprises de `poste_de_transformation`.
+      - when: {nature: Transformateur}
+        set: {power: transformer}
+      - when: {nature: Autre construction élevée}
+        set: {man_made: tower}
+      - when: {}
+        set:
+          fixme: "Nature BD TOPO sans équivalent OSM établi — à qualifier"
+
+  - set:
+      height: {from: hauteur, decimals: 1, drop_values: [0]}
+      "bdtopo:nature": {from: nature}
+      "bdtopo:nature_detaillee": {from: nature_detaillee}
+
+unmapped:
+  importance: Hiérarchie d'affichage cartographique, sans équivalent OSM.
+  etat_de_l_objet: Non discriminant sur cette couche.

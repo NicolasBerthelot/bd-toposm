@@ -1,0 +1,15 @@
+layer: piste_d_aerodrome
+description: Pistes d'aérodrome, 30 dans la Vienne.
+
+report_key: aeroway
+
+rules:
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+      aeroway: runway
+      surface: {from: nature, map: {Piste en herbe: grass, Piste en dur: paved}}
+
+unmapped:
+  fonction: Vide dans la Vienne.
+  etat_de_l_objet: Toujours « En service » dans la Vienne.

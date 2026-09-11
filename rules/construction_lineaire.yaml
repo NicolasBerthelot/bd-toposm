@@ -1,0 +1,52 @@
+layer: construction_lineaire
+description: >-
+  Ouvrages linéaires : ponts, murs, barrages, tunnels. Mesures sur le
+  département 86, 9 857 entités — dont 4 724 ponts et 3 001 ruines.
+
+report_key: man_made
+
+rules:
+
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+      name: {from: toponyme}
+
+  - first_match:
+      # Un pont BD Topo est une ligne descriptive de l'ouvrage, pas la voie
+      # qui l'emprunte (celle-ci porte déjà `bridge=yes`). OSM modélise l'ouvrage
+      # lui-même en `man_made=bridge`, normalement en surface ; en linéaire on
+      # garde le tag, c'est l'objet qui est décrit.
+      - when: {nature: Pont, nature_detaillee: Viaduc}
+        set: {man_made: bridge, bridge:structure: viaduct}
+      - when: {nature: Pont}
+        set: {man_made: bridge}
+      - when: {nature: Tunnel}
+        set: {man_made: tunnel}
+      - when: {nature: Barrage}
+        set: {waterway: dam}
+      - when: {nature: Quai}
+        set: {man_made: quay}
+      - when: {nature: Mur de soutènement}
+        set: {barrier: retaining_wall}
+      - when: {nature: Mur anti-bruit}
+        set: {barrier: wall, wall: noise_barrier}
+      - when: {nature: Mur}
+        set: {barrier: wall}
+      - when: {nature: Clôture}
+        set: {barrier: fence}
+      - when: {nature: Ruines}
+        set: {historic: ruins}
+      - when: {nature: Fronton de pelote basque}
+        set: {leisure: pitch, sport: pelota}
+      - when: {}
+        set:
+          fixme: "Nature BD TOPO sans équivalent OSM établi — à qualifier"
+
+  - set:
+      "bdtopo:nature": {from: nature}
+      "bdtopo:nature_detaillee": {from: nature_detaillee}
+
+unmapped:
+  importance: Hiérarchie d'affichage cartographique, sans équivalent OSM.
+  etat_de_l_objet: Non discriminant sur cette couche.

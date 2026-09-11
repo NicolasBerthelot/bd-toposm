@@ -1,0 +1,33 @@
+layer: lieu_dit_non_habite
+description: >-
+  Toponymes de lieux non habités, en points. Mesures sur le département 86,
+  14 696 points — dont 3 109 bois nommés.
+
+report_key: place
+point_mode: standalone
+
+rules:
+
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+      name: {from: toponyme}
+
+  - first_match:
+
+      - when: {nature: Arbre}
+        set: {natural: tree}
+
+      # Un bois nommé reste un toponyme : son emprise, quand elle existe, est
+      # portée par `zone_de_vegetation`. Poser `natural=wood` sur un point
+      # dupliquerait l'information sans en ajouter.
+      - when: {}
+        set: {place: locality}
+
+  - set:
+      "bdtopo:nature": {from: nature, drop_values: [Lieu-dit non habité]}
+
+unmapped:
+  importance: >-
+    Hiérarchie d'affichage cartographique. Sans équivalent pour un
+    `place=locality`, qui n'a pas de gradation dans OSM.

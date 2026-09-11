@@ -1,0 +1,190 @@
+layer: zone_d_activite_ou_d_interet
+description: >-
+  Zones d'activité et d'intérêt — la couche la plus riche en points d'intérêt
+  de la BD Topo : 92 natures distinctes réparties en 8 catégories. Mesures sur
+  le département 86, 8 318 zones.
+
+  Les natures sans équivalent OSM établi ne reçoivent pas de tag approchant :
+  elles sortent avec `fixme`, qui est un vrai tag OSM signalant un objet à
+  qualifier. Inventer une valeur plausible serait plus coûteux à corriger que
+  de signaler l'ignorance.
+
+report_key: amenity
+
+drop:
+  - when: {etat_de_l_objet: Non exploité}
+    reason: Équipement désaffecté (12 entités dans la Vienne).
+
+rules:
+
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+      name: {from: toponyme}
+
+  - first_match:
+
+      # ------------------------------------------------------------ religieux
+      - when: {nature: Culte chrétien}
+        set: {amenity: place_of_worship, religion: christian}
+      - when: {nature: Culte musulman}
+        set: {amenity: place_of_worship, religion: muslim}
+      - when: {nature: Culte divers}
+        set: {amenity: place_of_worship}
+      - when: {nature: Tombeau}
+        set: {historic: tomb}
+
+      # ------------------------------------------------------ gestion des eaux
+      - when: {nature: Station d'épuration}
+        set: {man_made: wastewater_plant}
+      - when: {nature: Station de pompage}
+        set: {man_made: pumping_station}
+      - when: {nature: Usine de production d'eau potable}
+        set: {man_made: water_works}
+
+      # --------------------------------------------- administratif et militaire
+      - when: {nature: Mairie}
+        set: {amenity: townhall}
+      - when: {nature: Poste}
+        set: {amenity: post_office}
+      - when: {nature: Caserne de pompiers}
+        set: {amenity: fire_station}
+      - when: {nature: [Gendarmerie, Police]}
+        set: {amenity: police}
+      - when: {nature: Palais de justice}
+        set: {amenity: courthouse}
+      - when: {nature: Etablissement pénitentiaire}
+        set: {amenity: prison}
+      - when: {nature: [Enceinte militaire, Ouvrage militaire, Camp militaire non clos]}
+        set: {landuse: military}
+      - when: {nature: Caserne}
+        set: {landuse: military, military: barracks}
+      - when: {nature: Champ de tir}
+        set: {landuse: military, military: range}
+      - when: {nature: [Préfecture, Sous-préfecture, Hôtel de région, Hôtel de département,
+                        Administration centrale de l'Etat, Autre service déconcentré de l'Etat,
+                        Siège d'EPCI, Divers public ou administratif]}
+        set: {office: government}
+      # Aire d'accueil des gens du voyage : `caravan_site` est l'usage OSM
+      # français pour ces aires, malgré l'ambiguïté du terme touristique.
+      - when: {nature: Aire d'accueil des gens du voyage}
+        set: {tourism: caravan_site, permanent: "yes"}
+
+      # ----------------------------------------------- science et enseignement
+      - when: {nature: [Enseignement primaire, Collège, Lycée,
+                        Autre établissement d'enseignement]}
+        set: {amenity: school}
+      - when: {nature: [Université, Enseignement supérieur]}
+        set: {amenity: university}
+      - when: {nature: Science}
+        set: {amenity: research_institute}
+      - when: {nature: Structure d'accueil pour personnes handicapées}
+        set: {amenity: social_facility, social_facility: assisted_living}
+
+      # ------------------------------------------------------------- santé
+      - when: {nature: [Hôpital, Etablissement hospitalier]}
+        set: {amenity: hospital}
+      - when: {nature: Maison de retraite}
+        set: {amenity: social_facility, social_facility: nursing_home}
+      - when: {nature: Etablissement thermal}
+        set: {amenity: public_bath, bath:type: thermal}
+
+      # ------------------------------------------------- industriel et commercial
+      - when: {nature: [Zone industrielle, Divers industriel]}
+        set: {landuse: industrial}
+      - when: {nature: Usine}
+        set: {landuse: industrial, man_made: works}
+      - when: {nature: Centrale électrique}
+        set: {power: plant}
+      - when: {nature: Déchèterie}
+        set: {amenity: recycling, recycling_type: centre}
+      - when: {nature: [Carrière, Mine]}
+        set: {landuse: quarry}
+      - when: {nature: Marché}
+        set: {amenity: marketplace}
+      - when: {nature: Aquaculture}
+        set: {landuse: aquaculture}
+      - when: {nature: [Elevage, Haras, Divers agricole]}
+        set: {landuse: farmyard}
+      - when: {nature: Divers commercial}
+        set: {landuse: retail}
+
+      # ------------------------------------------------------------- sport
+      - when: {nature: Stade}
+        set: {leisure: stadium}
+      - when: {nature: Golf}
+        set: {leisure: golf_course}
+      - when: {nature: Centre équestre}
+        set: {leisure: horse_riding}
+      - when: {nature: Hippodrome}
+        set: {leisure: track, sport: horse_racing}
+      - when: {nature: Piscine}
+        set: {leisure: sports_centre, sport: swimming}
+      - when: {nature: Baignade surveillée}
+        set: {leisure: swimming_area, supervised: "yes"}
+      - when: {nature: Patinoire}
+        set: {leisure: sports_centre, sport: ice_skating}
+      - when: {nature: Stand de tir}
+        set: {leisure: sports_centre, sport: shooting}
+      - when: {nature: Equipement de cyclisme}
+        set: {leisure: sports_centre, sport: cycling}
+      - when: {nature: Sports mécaniques}
+        set: {leisure: sports_centre, sport: motor}
+      - when: {nature: Sports en eaux vives}
+        set: {leisure: sports_centre, sport: canoe}
+      - when: {nature: Sports nautiques}
+        set: {leisure: sports_centre, sport: sailing}
+      - when: {nature: Site d'escalade}
+        set: {sport: climbing}
+      - when: {nature: Site de vol libre}
+        set: {sport: free_flying}
+      - when: {nature: [Complexe sportif couvert, Autre équipement sportif]}
+        set: {leisure: sports_centre}
+
+      # ------------------------------------------------------ culture et loisirs
+      - when: {nature: [Musée, Ecomusée]}
+        set: {tourism: museum}
+      - when: {nature: Parc zoologique}
+        set: {tourism: zoo}
+      - when: {nature: Camping}
+        set: {tourism: camp_site}
+      - when: {nature: Point de vue}
+        set: {tourism: viewpoint}
+      - when: {nature: [Office de tourisme, Maison du parc]}
+        set: {tourism: information, information: office}
+      - when: {nature: Monument}
+        set: {historic: monument}
+      - when: {nature: Mégalithe}
+        set: {historic: archaeological_site, site_type: megalith}
+      - when: {nature: Vestige archéologique}
+        set: {historic: archaeological_site}
+      - when: {nature: Centre de documentation}
+        set: {amenity: library}
+      - when: {nature: [Salle de spectacle ou conférence, Salle de danse ou de jeux]}
+        set: {amenity: community_centre}
+      - when: {nature: Parc des expositions}
+        set: {amenity: exhibition_centre}
+      - when: {nature: [Espace public, Aire de détente, Parc de loisirs]}
+        set: {leisure: park}
+
+      # ------------------------------------------------------------- résiduel
+      # Natures sans correspondance OSM assumée. `fixme` est un vrai tag OSM,
+      # lisible par les éditeurs et les outils de contrôle — bien préférable à
+      # un `tourism=attraction` posé au jugé.
+      - when: {}
+        set:
+          fixme: "Nature BD TOPO sans équivalent OSM établi — à qualifier"
+
+  - set:
+      "bdtopo:categorie": {from: categorie}
+      "bdtopo:nature": {from: nature}
+      "bdtopo:nature_detaillee": {from: nature_detaillee}
+      "bdtopo:fictif": {from: fictif, map: {true: "yes"}}
+
+unmapped:
+  importance: Hiérarchie d'affichage cartographique, sans équivalent OSM.
+  adresse_postale: >-
+    Adresse en texte libre et de qualité inégale (« rue basse », champs vides).
+    Découper en `addr:housenumber` / `addr:street` exigerait un travail de
+    normalisation qui relève de l'import adresses, pas de cette couche.
+  nom_commercial: Vide dans la Vienne.

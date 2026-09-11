@@ -1,0 +1,64 @@
+# Socle OSM-utile : les couches BD Topo converties par `--layers socle`.
+#
+# L'ORDRE COMPTE. Les couches linéaires et surfaciques passent d'abord, les
+# couches ponctuelles ensuite : un objet ponctuel en `point_mode: shared` (le
+# pylône) doit trouver déjà en place le sommet de la ligne sur lequel se
+# greffer. Inverser l'ordre créerait un nœud isolé, puis un second au même
+# endroit pour la ligne.
+#
+# Volumétries mesurées sur l'emprise de la Vienne (bbox, donc légèrement
+# supérieure au département strict).
+
+couches:
+  # ---- réseaux (topologiques : extrémités partagées)
+  - layer: troncon_de_route              # 342 922
+  - layer: troncon_hydrographique        #  42 310
+  - layer: troncon_de_voie_ferree        #   1 108
+  - layer: ligne_electrique              #     213
+  - layer: construction_lineaire         #   9 857
+
+  # ---- surfaces
+  - layer: batiment                      # 777 481
+  - layer: zone_de_vegetation            # 260 779 dont 161 425 haies écartées
+  - layer: surface_hydrographique        #  27 911
+  - layer: zone_d_habitation             #  23 853
+  - layer: zone_d_activite_ou_d_interet  #   8 318
+  - layer: equipement_de_transport       #   2 039
+  - layer: terrain_de_sport              #   1 899
+  - layer: reservoir                     #     831
+  - layer: cimetiere                     #     669
+  - layer: parc_ou_reserve               #     150
+  - layer: construction_surfacique       #     136
+  - layer: poste_de_transformation       #      67
+  - layer: piste_d_aerodrome             #      30
+  - layer: aerodrome                     #      21
+
+  # ---- points (après les géométries qu'ils peuvent rejoindre)
+  - layer: lieu_dit_non_habite           #  14 696
+  - layer: construction_ponctuelle       #   4 161
+  - layer: pylone                        #   3 994   point_mode: shared
+  - layer: detail_hydrographique         #   2 906
+
+# Couches examinées et volontairement hors socle. Chaque exclusion est un
+# arbitrage, pas un oubli.
+exclues:
+  haie: >-
+    555 203 lignes dans la Vienne — plus que le réseau routier entier. Les
+    haies sont déjà représentées deux fois dans la BD Topo (cette couche
+    linéaire, et 161 425 polygones dans zone_de_vegetation). Les convertir
+    saturerait iD, qui masque déjà les bâtiments au-delà de quelques centaines
+    par écran. Règle simple (`barrier=hedge`) si l'arbitrage change.
+  cours_d_eau: >-
+    Agrégation toponymique des tronçons hydrographiques : la convertir
+    dupliquerait leur géométrie. Le toponyme est repris sur les tronçons via
+    `cpx_toponyme_de_cours_d_eau`. Candidat naturel à une relation
+    `type=waterway`, à traiter avec les relations.
+  plan_d_eau: >-
+    Même logique : agrégation des surfaces hydrographiques, toponyme repris via
+    `cpx_toponyme_de_plan_d_eau`.
+  erp: >-
+    8 entités seulement dans la Vienne pour 216 615 en France : la couche n'y
+    est pas alimentée. Rien à convertir.
+  transport_par_cable: 2 entités dans la Vienne.
+  adresse_ban: >-
+    Import adresses à part entière (volumétrie et règles propres), hors socle.

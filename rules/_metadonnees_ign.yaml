@@ -1,0 +1,27 @@
+# Champs de métadonnées de production présents dans presque toutes les couches
+# BD Topo, et écartés pour la même raison partout. Fusionnés automatiquement
+# dans le `unmapped:` de chaque règle (sauf `unmapped_commun: false`).
+#
+# Les redéclarer couche par couche noierait les arbitrages qui comptent sous la
+# répétition — or c'est justement ce que le contrôle de couverture doit rendre
+# lisible. Un champ propre à une couche reste, lui, à déclarer explicitement.
+
+date_creation: Métadonnée de production IGN, sans équivalent OSM.
+date_modification: Idem.
+date_d_apparition: Idem.
+date_de_confirmation: Idem.
+sources: Provenance interne IGN ; le tag `source` porte déjà l'attribution.
+identifiants_sources: Identifiants du producteur amont.
+methode_d_acquisition_planimetrique: Qualité de saisie, hors modèle OSM.
+methode_d_acquisition_altimetrique: Idem, et l'altimétrie est écartée (Z supprimé).
+precision_planimetrique: Idem.
+precision_altimetrique: Idem.
+mode_d_obtention_des_coordonnees: Idem.
+mode_d_obtention_de_l_altitude: Idem.
+statut: État de validation interne ; toujours « Validé » en diffusion.
+statut_du_toponyme: Qualité du toponyme (Validé / Collecté), métadonnée de saisie.
+code_du_pays: Toujours « FR » sur le territoire traité.
+insee_commune: Rattachement administratif, déductible de la géométrie.
+commune: Idem, et redondant avec `insee_commune`.
+identifiant_voie_ban: Candidat `ref:FR:BAN` — à arbitrer avec l'import adresses.
+id_ban_odonyme: Idem.

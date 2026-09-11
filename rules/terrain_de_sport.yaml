@@ -1,0 +1,56 @@
+layer: terrain_de_sport
+description: >-
+  Terrains de sport de plein air. `nature` donne le type d'équipement,
+  `nature_detaillee` (42 % rempli) précise la discipline. Mesures sur le
+  département 86, 1 899 terrains.
+
+report_key: leisure
+
+drop:
+  - when: {etat_de_l_objet: En ruine}
+    reason: Terrain hors d'usage (7 entités dans la Vienne).
+
+rules:
+
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+
+  - first_match:
+      - when: {nature: Bassin de natation}
+        set: {leisure: swimming_pool, sport: swimming}
+      - when: {nature: Carrière équestre}
+        set: {leisure: pitch, sport: equestrian}
+      - when: {nature: Terrain de tennis}
+        set: {leisure: pitch, sport: tennis}
+      - when: {nature: Piste de sport, nature_detaillee: Stade d'athlétisme}
+        set: {leisure: track, sport: athletics}
+      - when: {nature: Piste de sport, nature_detaillee: Piste d'hippodrome}
+        set: {leisure: track, sport: horse_racing}
+      - when: {nature: Piste de sport, nature_detaillee: Piste de vélodrome}
+        set: {leisure: track, sport: cycling}
+      - when: {nature: Piste de sport, nature_detaillee: Piste de sports mécaniques}
+        set: {leisure: track, sport: motor}
+      - when: {nature: Piste de sport, nature_detaillee: Piste de cynodrome}
+        set: {leisure: track, sport: dog_racing}
+      - when: {nature: Piste de sport}
+        set: {leisure: track}
+      # Grand terrain et petit multi-sports : `leisure=pitch` dans les deux
+      # cas, la discipline venant de `nature_detaillee` quand elle existe.
+      - when: {}
+        set: {leisure: pitch}
+
+  - set:
+      sport:
+        from: nature_detaillee
+        map:
+          Terrain de football: soccer
+          Terrain de rugby: rugby
+          Terrain de basket-ball: basketball
+          Terrain de handball: handball
+          Terrain de volley-ball: volleyball
+          City-stade: multi
+      "bdtopo:nature": {from: nature}
+      "bdtopo:nature_detaillee": {from: nature_detaillee}
+
+unmapped: {}

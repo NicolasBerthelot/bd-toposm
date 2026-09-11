@@ -1,0 +1,11 @@
+.venv
+.git
+export
+web/id
+tests
+__pycache__
+*.pyc
+*.osm
+*.db-wal
+*.db-shm
+.pytest_cache

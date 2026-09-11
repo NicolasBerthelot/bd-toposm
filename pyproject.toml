@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "bdtopo-osm"
+version = "0.1.0"
+description = "Conversion BD Topo (IGN) vers le modèle de données OpenStreetMap"
+requires-python = ">=3.12"
+dependencies = [
+    "pyyaml>=6",
+]
+
+[project.optional-dependencies]
+# Conversion BD Topo → OSM (lecture des couches IGN, topologie).
+convert = [
+    "geopandas>=1.0",
+    "shapely>=2.0",
+    "pyogrio>=0.10",
+]
+# Service API 0.6 + iD. Suffit à l'image de démo : la base est convertie ailleurs.
+serve = [
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "python-multipart>=0.0.9",
+]
+
+[project.scripts]
+bdtopo-osm = "bdtopo_osm.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

@@ -1,0 +1,61 @@
+layer: zone_de_vegetation
+description: >-
+  Couverture végétale. Couche volumineuse — 260 779 polygones dans la Vienne,
+  13,9 M en France — dont **161 425 de nature « Haie »**, écartés ici : la
+  BD Topo 3.5 livre par ailleurs une couche `haie` linéaire dédiée et plus
+  précise, et conserver les deux représenterait chaque haie deux fois.
+
+report_key: natural
+
+drop:
+  - when: {nature: Haie}
+    reason: >-
+      Double représentation : 161 425 polygones dans la Vienne qui redoublent
+      la couche linéaire `haie` (555 203 entités), plus précise et issue d'un
+      levé dédié. Voir rules/socle.yaml pour l'arbitrage de volumétrie.
+
+rules:
+
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+
+  - first_match:
+
+      # Cultures pérennes : `landuse` décrit l'usage agricole, ce qui est plus
+      # informatif que `natural` pour une vigne ou un verger.
+      - when: {nature: Vigne}
+        set: {landuse: vineyard}
+
+      - when: {nature: Verger}
+        set: {landuse: orchard}
+
+      # Peupleraie : plantation exploitée, donc `landuse=forest` plutôt que
+      # `natural=wood` qui suggère un boisement spontané.
+      - when: {nature: Peupleraie}
+        set: {landuse: forest, leaf_type: broadleaved}
+
+      - when: {nature: Lande ligneuse}
+        set: {natural: scrub}
+
+      # Forêt ouverte : couvert discontinu, plus proche du fourré que du bois.
+      - when: {nature: Forêt ouverte}
+        set: {natural: scrub}
+
+      - when: {nature: Forêt fermée de feuillus}
+        set: {natural: wood, leaf_type: broadleaved}
+
+      - when: {nature: Forêt fermée de conifères}
+        set: {natural: wood, leaf_type: needleleaved}
+
+      - when: {nature: Forêt fermée mixte}
+        set: {natural: wood, leaf_type: mixed}
+
+      # « Bois » (61 167) : boisement sans qualification d'essence.
+      - when: {}
+        set: {natural: wood}
+
+  - set:
+      "bdtopo:nature": {from: nature}
+
+unmapped: {}

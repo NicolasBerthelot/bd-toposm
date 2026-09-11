@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <title>iD — BD TOPO® / Vienne</title>
+    <link rel="stylesheet" href="iD.css">
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <style>
+      html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
+      @media (prefers-color-scheme: dark) { body { background-color: #212529; } }
+      #bdtopo-banner {
+        position: fixed; bottom: 0; left: 0; z-index: 1000;
+        font: 11px/1.5 system-ui, sans-serif;
+        background: rgba(0, 0, 145, .92); color: #fff;
+        padding: 3px 10px; border-top-right-radius: 4px;
+        pointer-events: none;
+      }
+      #bdtopo-error {
+        position: fixed; inset: 0; z-index: 2000; display: none;
+        font: 14px/1.6 system-ui, sans-serif; padding: 32px;
+        background: #fff; color: #1b1b1b;
+      }
+      #bdtopo-error code { background: #eee; padding: 1px 4px; }
+    </style>
+  </head>
+
+  <body>
+    <div id="id-container"></div>
+    <div id="bdtopo-banner">Données IGN BD TOPO® 3.5 — instance locale, hors OpenStreetMap</div>
+    <div id="bdtopo-error"></div>
+
+    <script>
+      // Emplacement d'ouverture par défaut : centre de Poitiers, au zoom 17.
+      // iD ne charge les données qu'à partir du zoom 16 ; ouvrir plus large
+      // afficherait une carte vide et laisserait croire à une panne.
+      var DEFAUT = '#map=17.00/46.58020/0.34040';
+
+      if (!window.location.hash) {
+        window.history.replaceState(null, '', window.location.pathname + DEFAUT);
+      }
+
+      var container = document.getElementById('id-container');
+      var script = document.createElement('script');
+      script.src = 'iD.min.js';
+      script.onload = demarrer;
+      script.onerror = function () {
+        echec('Le script <code>iD.min.js</code> n’a pas pu être chargé.');
+      };
+      document.head.appendChild(script);
+
+      function echec(message) {
+        var box = document.getElementById('bdtopo-error');
+        box.innerHTML = '<h2>iD n’a pas démarré</h2><p>' + message + '</p>';
+        box.style.display = 'block';
+      }
+
+      function demarrer() {
+        if (typeof iD === 'undefined' || !iD.utilDetect().support) {
+          echec('Navigateur non pris en charge par iD.');
+          return;
+        }
+
+        var context = iD.coreContext()
+          .assetPath('')
+          .containerNode(container);
+
+        // Bascule vers cette instance AVANT init : sans cela iD interroge
+        // openstreetmap.org, dont les identifiants OAuth ne valent pas ici.
+        // `url` et `apiUrl` pointent la même origine — l'API et iD sont servis
+        // par le même processus, ce qui évite toute question de CORS.
+        var origine = window.location.origin;
+        context.connection().switch({ url: origine, apiUrl: origine });
+
+        context.init();
+
+        // Les limites administratives ne sont pas converties pour l'instant ;
+        // laisser le filtre actif éviterait un menu trompeur.
+        var q = iD.utilStringQs(window.location.hash);
+        if (!q.hasOwnProperty('disable_features')) {
+          context.features().disable('boundaries');
+        }
+
+        window.bdtopoContext = context;  // utile au diagnostic depuis la console
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,89 @@
+layer: equipement_de_transport
+description: >-
+  Équipements liés aux transports : parkings, gares, aires, bornes de recharge.
+  Mesures sur le département 86, 2 039 entités — dont 739 « Service dédié aux
+  véhicules » qui sont toutes des bornes de recharge électrique.
+
+report_key: amenity
+
+drop:
+  - when: {etat_de_l_objet: Non exploité}
+    reason: Équipement désaffecté (1 entité dans la Vienne).
+  # Les carrefours « équipement » sont des emprises de rond-point ou
+  # d'échangeur : le graphe routier porte déjà cette information de façon
+  # topologique (junction=roundabout, *_link). Une surface en plus ferait
+  # doublon sans rien apporter à l'édition.
+  - when: {nature: Carrefour}
+    reason: >-
+      Emprise de carrefour (431 entités) redondante avec le réseau routier,
+      qui porte déjà ronds-points et bretelles.
+
+rules:
+
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+      name: {from: toponyme}
+
+  - first_match:
+
+      - when: {nature: Parking, nature_detaillee: Parking souterrain}
+        set: {amenity: parking, parking: underground}
+      - when: {nature: Parking, nature_detaillee: Parking couvert}
+        set: {amenity: parking, parking: multi-storey}
+      - when: {nature: Parking, nature_detaillee: Parking relais}
+        set: {amenity: parking, park_ride: "yes"}
+      - when: {nature: Parking, nature_detaillee: Aire de covoiturage}
+        set: {amenity: parking, parking: surface, carpool: "yes"}
+      - when: {nature: Parking, nature_detaillee: Aire de camping-cars}
+        set: {tourism: caravan_site}
+      - when: {nature: Parking}
+        set: {amenity: parking, parking: surface}
+
+      # 739 entités, toutes « Borne de rechargement électrique » d'après
+      # `nature_detaillee` ; la source Etalab (opérateurs IRVE) le confirme.
+      - when: {nature: Service dédié aux véhicules}
+        set: {amenity: charging_station, motorcar: "yes"}
+
+      - when: {nature: Aire de repos ou de service, nature_detaillee: Aire de service}
+        set: {highway: services}
+      - when: {nature: Aire de repos ou de service}
+        set: {highway: rest_area}
+
+      - when: {nature: Péage}
+        set: {barrier: toll_booth}
+
+      # Gares : `railway=station` sur l'emprise, `public_transport=station`
+      # pour la sémantique transport en commun.
+      - when: {nature: Gare voyageurs uniquement}
+        set: {railway: station, public_transport: station, train: "yes"}
+      - when: {nature: Gare voyageurs et fret}
+        set: {railway: station, public_transport: station, train: "yes"}
+      - when: {nature: Gare fret uniquement}
+        set: {railway: station, usage: freight}
+      - when: {nature: Arrêt voyageurs}
+        set: {railway: halt, public_transport: station, train: "yes"}
+      - when: {nature: Aire de triage}
+        set: {landuse: railway, railway: yard}
+      - when: {nature: Gare routière}
+        set: {amenity: bus_station, public_transport: station}
+
+      - when: {nature: Aérogare}
+        set: {aeroway: terminal}
+      - when: {nature: Tour de contrôle aérien}
+        set: {aeroway: control_tower}
+
+      - when: {}
+        set:
+          fixme: "Nature BD TOPO sans équivalent OSM établi — à qualifier"
+
+  - set:
+      "bdtopo:nature": {from: nature}
+      "bdtopo:nature_detaillee": {from: nature_detaillee}
+      "bdtopo:fictif": {from: fictif, map: {true: "yes"}}
+      ref: {from: numero}
+
+unmapped:
+  importance: Hiérarchie d'affichage cartographique, sans équivalent OSM.
+  adresse_postale: >-
+    Adresse en texte libre, qualité inégale ; relève de l'import adresses.

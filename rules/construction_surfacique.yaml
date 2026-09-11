@@ -1,0 +1,31 @@
+layer: construction_surfacique
+description: >-
+  Ouvrages surfaciques : emprises de ponts et écluses. 136 entités dans la
+  Vienne.
+
+report_key: man_made
+
+rules:
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+      name: {from: toponyme}
+
+  - first_match:
+      - when: {nature: Pont, nature_detaillee: Viaduc}
+        set: {man_made: bridge, bridge:structure: viaduct, layer: "1"}
+      - when: {nature: Pont}
+        set: {man_made: bridge, layer: "1"}
+      - when: {nature: Ecluse}
+        set: {waterway: lock}
+      - when: {}
+        set:
+          fixme: "Nature BD TOPO sans équivalent OSM établi — à qualifier"
+
+  - set:
+      "bdtopo:nature": {from: nature}
+      "bdtopo:nature_detaillee": {from: nature_detaillee}
+
+unmapped:
+  importance: Hiérarchie d'affichage cartographique, sans équivalent OSM.
+  etat_de_l_objet: Non discriminant sur cette couche.

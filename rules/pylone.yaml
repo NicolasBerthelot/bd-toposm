@@ -1,0 +1,20 @@
+layer: pylone
+description: >-
+  Pylônes des lignes haute tension, 3 994 dans la Vienne. Un pylône est un
+  sommet de la ligne qu'il porte : `point_mode: shared` réutilise le nœud de
+  `ligne_electrique` à la même coordonnée, ce qui fait du pylône un vrai nœud
+  de la ligne dans le modèle OSM (`power=tower` sur un nœud de `power=line`).
+
+report_key: power
+point_mode: shared
+
+rules:
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+      power: tower
+      ref: {from: numero}
+      height: {from: hauteur, decimals: 1, drop_values: [0]}
+
+unmapped:
+  etat_de_l_objet: Non discriminant sur cette couche.

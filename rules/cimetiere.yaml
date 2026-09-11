@@ -1,0 +1,18 @@
+layer: cimetiere
+description: >-
+  Cimetières. Une seule nature (« Civil ») dans la Vienne ; 669 emprises.
+
+report_key: landuse
+
+rules:
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+      landuse: cemetery
+      name: {from: toponyme}
+      "bdtopo:nature": {from: nature, drop_values: [Civil]}
+      "bdtopo:nature_detaillee": {from: nature_detaillee}
+
+unmapped:
+  importance: Hiérarchie d'affichage cartographique, sans équivalent OSM.
+  etat_de_l_objet: Toujours « En service » dans la Vienne.
