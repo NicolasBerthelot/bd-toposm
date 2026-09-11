@@ -271,41 +271,40 @@ Trois refus assumés, chacun documenté dans le YAML concerné :
 Contrôles passés : aucune référence orpheline, aucun bâtiment non fermé, aucun
 way hors limite de 2 000 nœuds, aucun tag membre sur un way de multipolygone.
 
-## Déploiement de la démo (Hugging Face Spaces)
+## Déploiement de la démo (Render)
 
 L'image Docker sert une base déjà convertie — Poitiers, socle complet
-(`demo/poitiers.db`, 66 Mo, suivi via Git LFS) — et iD, récupéré à la
-construction depuis la branche `release` du dépôt amont. Le service n'embarque
-aucune dépendance géo : la conversion se fait en local, seule la base voyage.
+(`demo/poitiers.db`, 66 Mo, versionné tel quel : Render ne récupère pas Git
+LFS) — et iD, récupéré à la construction depuis la branche `release` du dépôt
+amont. Le service n'embarque aucune dépendance géo : la conversion se fait en
+local, seule la base voyage.
 
-Le bloc YAML en tête de ce fichier est lu par Hugging Face (`sdk: docker`,
-`app_port: 7860`). Une fois le Space créé (type **Docker**, visibilité au choix) :
-
-```bash
-git lfs install
-git remote add hf https://huggingface.co/spaces/<compte>/<space>
-git push hf main
-```
-
-Puis dans *Settings → Variables and secrets* du Space, ajouter le **secret**
-`BDTOPO_DEMO_PASSWORD`. Sans lui le conteneur refuse de démarrer en écriture
-sur `0.0.0.0` (garde-fou du CLI) ; pour une instance en lecture seule, retirer
-`--writable` de la commande du `Dockerfile`.
+`render.yaml` décrit le service (Docker, plan gratuit, Francfort, contrôle de
+santé sur `/status`). Depuis le tableau de bord Render : **New → Blueprint**,
+choisir ce dépôt, saisir `BDTOPO_DEMO_PASSWORD` quand il est demandé, appliquer.
+Sans ce mot de passe le conteneur refuse de démarrer en écriture sur `0.0.0.0`
+(garde-fou du CLI) ; pour une instance en lecture seule, retirer `--writable`
+de la commande du `Dockerfile`.
 
 Ce que ça donne : la fenêtre de connexion qu'iD ouvre affiche le formulaire de
 mot de passe (le mot de passe s'insère dans le circuit OAuth2 sans le modifier),
 tous les contributeurs partagent l'utilisateur « bdtopo », et **les modifications
 sont réinitialisées à chaque redémarrage** — disque éphémère, annoncé dans la
-page de connexion. La bannière rouge « lecture seule » disparaît une fois
-connecté.
+page de connexion. Le plan gratuit endort le service après 15 minutes sans
+visite ; le réveil prend une trentaine de secondes.
 
 `--behind-proxy` fait confiance aux en-têtes `X-Forwarded-*` du proxy TLS de
 l'hébergeur : sans cela, le contrôle d'origine du `redirect_uri` OAuth2
-comparerait `https://…hf.space` à `http://…:7860` et refuserait toute connexion.
+comparerait `https://…onrender.com` à `http://…:10000` et refuserait toute
+connexion.
 
-Pour la Vienne entière (base de ~2–3 Go), un Space gratuit ne suffit plus : il
-faut un volume persistant (VM Oracle *Always Free*, ou un VPS) — même image,
-autre base.
+Le bloc YAML en tête de ce fichier vise Hugging Face Spaces ; il est inoffensif
+ailleurs. Les Spaces Docker y exigent désormais un abonnement PRO — c'est ce
+qui a conduit à Render.
+
+Pour la Vienne entière (base de 1,9 Go), un hébergement gratuit ne suffit plus :
+volume persistant (VM Oracle *Always Free*) ou VPS — même image, autre base,
+récupérable à la construction depuis une *Release* GitHub (2 Go par fichier).
 
 ## Attention
 

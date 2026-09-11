@@ -1,0 +1,16 @@
+# Blueprint Render : « New → Blueprint » sur ce dépôt suffit à créer le service.
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: bdtopo-osm-vienne
+    runtime: docker
+    plan: free            # 512 Mo, endormi après 15 min sans trafic (~30 s de réveil)
+    region: frankfurt
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /status
+    envVars:
+      # Demandé à la création du Blueprint, jamais versionné. Sans lui, le
+      # conteneur refuse de démarrer en écriture sur 0.0.0.0 (garde-fou du CLI).
+      - key: BDTOPO_DEMO_PASSWORD
+        sync: false
+      # Render fournit PORT lui-même ; le CLI le lit. Rien à faire.
