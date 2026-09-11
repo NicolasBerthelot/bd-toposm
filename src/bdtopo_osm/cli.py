@@ -118,6 +118,17 @@ def _cmd_mapping(args) -> int:
     return 0
 
 
+def _cmd_docs_explorer(args) -> int:
+    from .explorer import fetch_all
+    from .pipeline import socle_layers
+
+    payload = fetch_all(socle_layers(Path(args.rules) / "socle.yaml"), args.out)
+    n_attr = sum(len(c["attributes"]) for c in payload["couches"].values())
+    n_val = sum(len(a["values"]) for c in payload["couches"].values() for a in c["attributes"].values())
+    print(f"{args.out} : {len(payload['couches'])} couches, {n_attr} attributs, {n_val} valeurs documentées")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     # Le rapport contient des caractères hors cp1252 (tirets, avertissements) ;
     # sous Windows, un stdout redirigé retombe sur cette page de code et lève.
@@ -186,6 +197,11 @@ def main(argv: list[str] | None = None) -> int:
     p.add_argument("--xlsx", type=Path, help="classeur Excel à écrire")
     p.add_argument("--rules", type=Path, default=RULES_DIR)
     p.set_defaults(func=_cmd_mapping)
+
+    p = sub.add_parser("docs-explorer", help="extraire la documentation BD TOPO Explorer (hors ligne)")
+    p.add_argument("--out", type=Path, default=Path("web/bdtopo-docs.json"))
+    p.add_argument("--rules", type=Path, default=RULES_DIR)
+    p.set_defaults(func=_cmd_docs_explorer)
 
     args = parser.parse_args(argv)
     return args.func(args)

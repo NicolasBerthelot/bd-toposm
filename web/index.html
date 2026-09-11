@@ -98,7 +98,88 @@
           context.features().disable('boundaries');
         }
 
+        brancherDocumentationBdTopo(context);
+
         window.bdtopoContext = context;  // utile au diagnostic depuis la console
+      }
+
+      // ------------------------------------------------------------------
+      // Référence des tags bdtopo:* → BD TOPO Explorer.
+      //
+      // Le bouton ⓘ d'iD interroge le service `osmWikibase` pour obtenir un
+      // objet { title, description, wiki: {url} }. On l'intercepte : pour un
+      // tag issu de la BD Topo, la réponse vient de la documentation IGN
+      // (attribut ou valeur, avec l'ancre exacte de la page BD TOPO Explorer) ;
+      // pour tout autre tag, le service d'origine répond comme d'habitude.
+      // La couche de l'objet se déduit du préfixe de son `ref:FR:IGN:cleabs`.
+      var CHAMPS = { usage: 'usage_1', etat: 'etat_de_l_objet', voltage: 'voltage' };
+
+      function brancherDocumentationBdTopo(context) {
+        var service = iD.services && iD.services.osmWikibase;
+        if (!service) return;
+        var docs = null;
+        fetch('bdtopo-docs.json').then(function (r) { return r.json(); })
+          .then(function (d) { docs = d; })
+          .catch(function () { docs = null; });
+
+        var original = service.getDocs;
+        service.getDocs = function (params, callback) {
+          var key = params.key || '';
+          var reponse = docs && (key.indexOf('bdtopo:') === 0 || key === 'ref:FR:IGN:cleabs')
+            ? documentation(context, docs, key, params.value) : null;
+          if (reponse) { callback(null, reponse); return; }
+          return original.call(this, params, callback);
+        };
+      }
+
+      function coucheDe(context, docs) {
+        var ids = context.selectedIDs();
+        var entite = ids.length ? context.hasEntity(ids[0]) : null;
+        var cleabs = entite && entite.tags['ref:FR:IGN:cleabs'];
+        if (!cleabs) return null;
+        var nom = docs.prefixes[cleabs.slice(0, 8)];
+        return nom ? { nom: nom, doc: docs.couches[nom] } : null;
+      }
+
+      function texte(t) { return function (sel) { sel.text(t); }; }
+
+      function documentation(context, docs, key, value) {
+        var couche = coucheDe(context, docs);
+        if (!couche || !couche.doc) return null;
+        var c = couche.doc;
+
+        if (key === 'ref:FR:IGN:cleabs') {
+          return {
+            title: 'BD TOPO® — ' + c.label + (c.theme ? ' (' + c.theme + ')' : ''),
+            description: texte(c.definition || 'Identifiant pérenne de l’objet dans la couche « ' + c.label + ' » de la BD TOPO.'),
+            descriptionLocaleCode: 'fr',
+            editURL: c.url,
+            wiki: { url: c.url, text: texte('Voir la couche dans BD TOPO Explorer') }
+          };
+        }
+
+        var champ = key.slice('bdtopo:'.length);
+        champ = CHAMPS[champ] || champ;
+        var attr = c.attributes[champ];
+        if (!attr) return null;
+
+        var val = value && attr.values && attr.values[value];
+        if (val) {
+          return {
+            title: attr.label + ' = « ' + value + ' »',
+            description: texte(val.definition || attr.definition || ''),
+            descriptionLocaleCode: 'fr',
+            editURL: val.url,
+            wiki: { url: val.url, text: texte('Voir cette valeur dans BD TOPO Explorer') }
+          };
+        }
+        return {
+          title: attr.label + ' (' + c.label + ')',
+          description: texte(attr.definition || ''),
+          descriptionLocaleCode: 'fr',
+          editURL: attr.url,
+          wiki: { url: attr.url, text: texte('Voir cet attribut dans BD TOPO Explorer') }
+        };
       }
     </script>
   </body>

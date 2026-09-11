@@ -662,6 +662,14 @@ def create_app(
         if (WEB_DIR / "dsfr").is_dir():
             app.mount("/dsfr", StaticFiles(directory=WEB_DIR / "dsfr"), name="dsfr")
 
+        # Documentation BD TOPO Explorer extraite hors ligne (cf. explorer.py) :
+        # la page d'iD y puise la référence des tags `bdtopo:*`.
+        if (WEB_DIR / "bdtopo-docs.json").exists():
+
+            @app.get("/bdtopo-docs.json")
+            def bdtopo_docs() -> FileResponse:
+                return FileResponse(WEB_DIR / "bdtopo-docs.json", media_type="application/json")
+
         # ---- locale française d'iD, réécrite pour BD France
         # iD charge `locales/fr.min.json` depuis assetPath ; cette route prend
         # le pas sur le fichier statique. La surcharge est un fichier JSON à

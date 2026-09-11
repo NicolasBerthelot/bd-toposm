@@ -141,6 +141,24 @@ build d'iD :
 Le DSFR est récupéré à la construction depuis le paquet npm `@gouvfr/dsfr`
 (feuille de style et police), comme iD.
 
+### La documentation BD TOPO Explorer dans l'éditeur
+
+Le bouton ⓘ d'iD interroge un service (`osmWikibase`) qui renvoie un titre,
+une définition et un lien — vers le wiki OSM. `web/index.html` intercepte ce
+service : pour un tag `bdtopo:*` (ou `ref:FR:IGN:cleabs`), la réponse vient de
+**BD TOPO Explorer** — définition de l'attribut ou de la valeur, et lien vers
+son ancre exacte (`bdtopoexplorer.ign.fr/reservoir#attribute_value_465`). Pour
+tout autre tag, le service d'origine répond comme d'habitude. La couche de
+l'objet se déduit du préfixe de son `cleabs` (`RESERVOI…`, `TRONROUT…`).
+
+La documentation est extraite hors ligne par `bdtopo-osm docs-explorer`
+(`explorer.py`, 23 couches, 194 attributs, 1 151 valeurs) dans
+`web/bdtopo-docs.json`, versionné et servi tel quel. Six couches n'ont pas de
+définition de classe sur leur page (`troncon_de_route`, `zone_d_habitation`…) :
+le champ reste vide plutôt que d'être rempli par la première définition
+d'attribut rencontrée — c'est un piège de la structure HTML, et `bdtopo-extract`
+y est tombé dans `_fetch_description`.
+
 ## Le serveur API 0.6
 
 Endpoints implémentés : `/api/capabilities`, `/api/0.6/capabilities`,
