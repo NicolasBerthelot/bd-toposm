@@ -27,7 +27,7 @@ couches IGN.
 | 2a | Base SQLite + API 0.6 **en lecture**, iD branché dessus | ✅ |
 | 2b | Écriture : changesets, upload osmChange, OAuth2 | ✅ |
 | 3 | Socle OSM-utile : 23 couches converties | ✅ |
-| 4 | Passage à l'échelle du département | à faire |
+| 4 | Passage à l'échelle du département (moteur SQLite) | ✅ |
 | 5 | Propagation de classe (bretelles, ronds-points), relations d'itinéraire et de cours d'eau | à faire |
 
 ## Usage
@@ -83,6 +83,41 @@ illisible :
 
 Résultat sur Poitiers : 335 912 nœuds, 49 803 ways, 132 relations, aucun champ
 non couvert en mode `--strict`.
+
+## L'échelle du département
+
+Le graphe d'un département ne tient pas en mémoire : `SqliteBuilder`
+(`store_builder.py`) écrit au fil de l'eau dans la base cible et déplace la
+déduplication des sommets dans une table `node_coords (lon, lat) → id`. Ce qui
+rend l'exactitude possible : un REAL SQLite est le même double IEEE 754 que la
+coordonnée shapely — l'égalité stricte garde exactement le sens qu'elle avait
+en mémoire. Les règles topologiques (anneaux, multipolygones, découpage à
+2 000 nœuds) sont partagées avec le moteur mémoire, qui reste celui des tests
+et des communes ; `--engine auto` choisit SQLite dès qu'on demande `--db` sans
+`.osm`.
+
+```powershell
+.\.venv\Scripts\python.exe -m bdtopo_osm.cli convert `
+    --layers socle --territoire departement:86 --db .\exportienne.db --strict
+```
+
+Vienne, 23 couches, **22 minutes** (dont ~9 de lecture réseau), 1 Go de RAM au
+pic, une transaction par couche :
+
+```
+9 504 802 nœuds · 832 688 ways · 2 555 relations · 1,9 Go
+219 216 tronçons de route · 501 611 bâtiments · 41 952 zones de végétation
+23 722 tronçons hydrographiques · 14 629 surfaces en eau · 13 225 lieux habités
+```
+
+Intégrité : zéro référence orpheline, zéro bâtiment non fermé, zéro way au-delà
+de 2 000 nœuds ; 2 734 pylônes sur 2 739 sont des sommets d'une ligne (les cinq
+autres portent des lignes qui sortent du département) ; 129 `fixme`.
+
+Servi tel quel, l'API répond en **73 ms** pour une tuile de zoom 18 et en
+~300 ms au zoom 17 — les mêmes latences que sur Poitiers : l'index R*Tree ne
+sent pas la taille de la base. Seul `/status` (six `count(*)`) coûte une
+seconde, d'où la sonde `/healthz` pour l'hébergeur.
 
 ## Le serveur API 0.6
 
