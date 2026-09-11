@@ -611,6 +611,20 @@ def create_app(
 
     # ----------------------------------------------------------- diagnostic
 
+    @app.get("/healthz")
+    def healthz() -> dict:
+        """Contrôle de santé de l'hébergeur : touche la base sans la parcourir.
+
+        `/status` compte les tables — une seconde sur un département — ce qui
+        serait trop pour une sonde appelée toutes les quelques secondes.
+        """
+        con = connection()
+        try:
+            con.execute("SELECT 1 FROM nodes LIMIT 1").fetchone()
+        finally:
+            con.close()
+        return {"ok": True}
+
     @app.get("/status")
     def status() -> dict:
         con = connection()

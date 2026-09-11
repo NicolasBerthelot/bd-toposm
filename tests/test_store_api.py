@@ -280,3 +280,7 @@ def test_tampon_regroupe_les_fragments():
 def test_tampon_preserve_le_contenu_court():
     assert list(_chunked(iter([]))) == []
     assert list(_chunked(iter(["a", "b"]))) == ["ab"]
+
+
+def test_healthz_est_leger(client):
+    assert client.get("/healthz").json() == {"ok": True}
