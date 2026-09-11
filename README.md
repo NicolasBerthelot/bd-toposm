@@ -316,7 +316,7 @@ local, seule la base voyage.
 
 `render.yaml` décrit le service (Docker, plan gratuit, Francfort, contrôle de
 santé sur `/status`). Depuis le tableau de bord Render : **New → Blueprint**,
-choisir ce dépôt, saisir `BDTOPO_DEMO_PASSWORD` quand il est demandé, appliquer.
+choisir ce dépôt (`NicolasBerthelot/bd-toposm`), saisir `BDTOPO_DEMO_PASSWORD` quand il est demandé, appliquer.
 Sans ce mot de passe le conteneur refuse de démarrer en écriture sur `0.0.0.0`
 (garde-fou du CLI) ; pour une instance en lecture seule, retirer `--writable`
 de la commande du `Dockerfile`.
