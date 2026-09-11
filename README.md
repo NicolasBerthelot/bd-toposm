@@ -251,6 +251,11 @@ modèle topologique.
 
 ### Le mapping est un livrable, pas du code
 
+**Table de correspondance complète : [`docs/mapping.md`](docs/mapping.md)**
+(1 256 lignes, aussi en classeur [`docs/mapping.xlsx`](docs/mapping.xlsx)), générée
+depuis les règles par `bdtopo-osm mapping --md docs/mapping.md --xlsx docs/mapping.xlsx`
+— à régénérer, jamais à éditer.
+
 Les règles vivent dans `rules/*.yaml`, un fichier par couche. Le moteur
 (`mapping.py`) impose trois disciplines :
 

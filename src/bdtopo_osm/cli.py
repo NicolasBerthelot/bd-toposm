@@ -103,6 +103,21 @@ def _cmd_serve(args) -> int:
     return 0
 
 
+def _cmd_mapping(args) -> int:
+    from .mapping_export import write_markdown, write_xlsx
+
+    if not args.md and not args.xlsx:
+        print("Il faut --md et/ou --xlsx.", file=sys.stderr)
+        return 2
+    if args.md:
+        n = write_markdown(Path(args.rules), args.md)
+        print(f"{args.md} : {n} lignes")
+    if args.xlsx:
+        n = write_xlsx(Path(args.rules), args.xlsx)
+        print(f"{args.xlsx} : {n} lignes")
+    return 0
+
+
 def main(argv: list[str] | None = None) -> int:
     # Le rapport contient des caractères hors cp1252 (tirets, avertissements) ;
     # sous Windows, un stdout redirigé retombe sur cette page de code et lève.
@@ -165,6 +180,12 @@ def main(argv: list[str] | None = None) -> int:
     )
     p.add_argument("--log-level", default="warning")
     p.set_defaults(func=_cmd_serve)
+
+    p = sub.add_parser("mapping", help="exporter la table de correspondance BD Topo → OSM")
+    p.add_argument("--md", type=Path, help="fichier Markdown à écrire")
+    p.add_argument("--xlsx", type=Path, help="classeur Excel à écrire")
+    p.add_argument("--rules", type=Path, default=RULES_DIR)
+    p.set_defaults(func=_cmd_mapping)
 
     args = parser.parse_args(argv)
     return args.func(args)
