@@ -1,5 +1,5 @@
 ---
-title: BD TOPO → OpenStreetMap (Vienne)
+title: BD France Édition
 emoji: 🗺️
 colorFrom: blue
 colorTo: indigo
@@ -9,7 +9,7 @@ pinned: false
 short_description: Démo iD sur des données IGN BD TOPO converties au modèle OSM
 ---
 
-# bdtopo-osm
+# bdtopo-osm — BD France Édition
 
 Conversion de la **BD Topo® 3.5 (IGN)** vers le modèle de données **OpenStreetMap**
 — nodes, ways, relations — en vue d'alimenter une instance de l'éditeur iD.
@@ -118,6 +118,28 @@ Servi tel quel, l'API répond en **73 ms** pour une tuile de zoom 18 et en
 ~300 ms au zoom 17 — les mêmes latences que sur Poitiers : l'index R*Tree ne
 sent pas la taille de la base. Seul `/status` (six `count(*)`) coûte une
 seconde, d'où la sonde `/healthz` pour l'hébergeur.
+
+## L'interface : BD France Édition
+
+L'éditeur est iD, hébergé dans une page aux couleurs du **DSFR** (police
+Marianne, bleu France) et débaptisé : plus aucune mention d'OpenStreetMap dans
+l'interface hors des modules désactivés, attribution des données corrigée en
+« IGN — BD France, Licence Ouverte 2.0 ». Trois pièces, aucune modification du
+build d'iD :
+
+- `web/index.html` — en-tête `fr-header` (sans bloc-marque République
+  française, réservé), conteneur iD, pied de page avec la licence ;
+- `web/bdfrance.css` — surcharge des variables CSS qu'iD expose
+  (`--link-color`, `--accent-color`) et de la police ; masque le guide
+  interactif (jeu de données fictif, tout en vocabulaire OSM) et les appels
+  aux dons de l'écran de succès ;
+- `web/locale-fr.json` — réécriture d'une cinquantaine de chaînes (accueil,
+  enregistrement, statut d'API, calques) ; le serveur applique la surcharge sur
+  `/locales/fr.min.json` et remplace globalement les mentions restantes, sauf
+  dans l'index des communautés et le catalogue d'imagerie qui décrivent OSM.
+
+Le DSFR est récupéré à la construction depuis le paquet npm `@gouvfr/dsfr`
+(feuille de style et police), comme iD.
 
 ## Le serveur API 0.6
 

@@ -1,0 +1,60 @@
+{
+  "_commentaire": "Surcharge de la locale française d'iD, appliquée par le serveur sur /locales/fr.min.json. Chemins pointés = clés remplacées. Les sections community et imagery ne sont pas touchées (désactivées par ailleurs). Les mentions restantes d'OpenStreetMap hors de cette liste sont remplacées globalement par « BD France » (voir api.py).",
+
+  "loading_auth": "Connexion à BD France Édition…",
+
+  "splash.welcome": "Bienvenue sur BD France Édition",
+  "splash.text": "Instance de démonstration : les données de la BD France (IGN) converties au modèle OpenStreetMap, éditables avec l'éditeur iD. Version {version} d'iD. Ce service est sans lien avec openstreetmap.org — rien de ce qui est enregistré ici n'y est envoyé.",
+  "splash.privacy": "{updateMessage} Instance locale : aucune donnée personnelle n'est collectée, tous les contributeurs partagent le même utilisateur « bdtopo ».",
+  "splash.privacy_update": "",
+  "splash.privacy_policy": "mentions",
+  "splash.walkthrough": "Commencer le guide",
+  "splash.start": "Ouvrir l'éditeur",
+
+  "commit.title": "Enregistrer dans BD France",
+  "commit.upload_explanation": "Les modifications seront enregistrées dans l'instance BD France de démonstration. Elles ne sont pas envoyées à OpenStreetMap.",
+  "commit.upload_explanation_with_user": "Les modifications enregistrées en tant que {user} le sont dans l'instance BD France de démonstration. Elles ne sont pas envoyées à OpenStreetMap.",
+  "commit.request_review": "Signaler cette modification pour relecture",
+  "commit.request_review_info": "Un doute ? Signalez le lot de modifications pour qu'un référent le relise.",
+  "commit.about_changeset_comments": "Décrivez brièvement ce que vous avez modifié",
+  "commit.about_changeset_comments_link": "",
+  "commit.save": "Enregistrer",
+
+  "save.help": "Vérifiez vos modifications avant de les enregistrer dans BD France.",
+  "save.uploading": "Enregistrement dans BD France…",
+
+  "success.just_edited": "Modifications enregistrées dans BD France",
+  "success.help_html": "Vos modifications sont enregistrées dans l'instance de démonstration. Rechargez la page pour les voir prises en compte.",
+  "success.help_link_text": "",
+  "success.view_on_osm": "Voir le lot de modifications",
+  "success.supporting.title": "",
+  "success.supporting.details": "",
+  "success.supporting.donation.title": "",
+  "success.supporting.donation.details": "",
+  "success.like_osm": "",
+  "success.more": "",
+
+  "osm_api_status.message.error": "Impossible d'atteindre le serveur BD France Édition. Vos modifications sont conservées localement. Vérifiez votre connexion.",
+  "osm_api_status.message.offline": "Le serveur BD France Édition est hors ligne. Vos modifications sont conservées localement.",
+  "osm_api_status.message.readonly": "Cette instance est en consultation seule : vous pouvez explorer les données, pas les enregistrer.",
+  "osm_api_status.message.rateLimit": "Connectez-vous pour enregistrer vos modifications.",
+  "osm_api_status.message.rateLimited": "Le serveur limite temporairement votre connexion, veuillez patienter.",
+
+  "map_data.layers.osm.title": "Données BD France",
+  "map_data.layers.osm.tooltip": "Données de la BD France (IGN) au modèle OpenStreetMap",
+  "map_data.layers.notes.title": "Notes",
+  "map_data.layers.notes.tooltip": "Notes (non disponibles sur cette instance)",
+  "map_data.osmhidden": "Ces éléments sont masqués parce que le calque Données BD France est masqué.",
+
+  "issues.osm_api_limits.title": "Limites du modèle de données",
+  "issues.osm_api_limits.tip": "Limites du modèle OSM appliquées par le serveur aux éléments enregistrés",
+
+  "shortcuts.browsing.display_options.osm_data": "Afficher ou masquer les données BD France",
+
+  "help.help.welcome": "Bienvenue dans BD France Édition, une instance de l'éditeur iD branchée sur les données de la BD France (IGN) converties au modèle OpenStreetMap. Ce service est indépendant d'openstreetmap.org.",
+  "help.help.open_data": "Les données de la BD France sont publiées par l'IGN sous Licence Ouverte 2.0. Vos modifications sont enregistrées dans cette instance de démonstration.",
+  "help.help.before_start": "Prenez le temps de parcourir cette aide avant vos premières modifications.",
+
+  "intro.welcome.welcome": "Bienvenue ! Cette visite guidée présente les bases de l'édition dans BD France Édition.",
+  "intro.startediting.help": "Vous êtes prêt à modifier la BD France !"
+}

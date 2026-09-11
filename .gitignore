@@ -5,6 +5,8 @@ __pycache__/
 # Build d'iD récupéré depuis la branche `release` du dépôt amont (72 Mo).
 # Voir le README pour la commande de récupération.
 web/id/
+# DSFR récupéré depuis npm à la construction (voir Dockerfile)
+web/dsfr/
 
 # Sorties de conversion
 export/

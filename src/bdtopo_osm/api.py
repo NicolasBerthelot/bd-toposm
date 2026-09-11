@@ -652,6 +652,55 @@ def create_app(
         def index() -> FileResponse:
             return FileResponse(index_file, media_type="text/html")
 
+        # ---- habillage BD France Édition : feuille de style et DSFR
+        if (WEB_DIR / "bdfrance.css").exists():
+
+            @app.get("/bdfrance.css")
+            def bdfrance_css() -> FileResponse:
+                return FileResponse(WEB_DIR / "bdfrance.css", media_type="text/css")
+
+        if (WEB_DIR / "dsfr").is_dir():
+            app.mount("/dsfr", StaticFiles(directory=WEB_DIR / "dsfr"), name="dsfr")
+
+        # ---- locale française d'iD, réécrite pour BD France
+        # iD charge `locales/fr.min.json` depuis assetPath ; cette route prend
+        # le pas sur le fichier statique. La surcharge est un fichier JSON à
+        # clés pointées (web/locale-fr.json) ; les mentions d'OpenStreetMap qui
+        # subsistent ailleurs sont remplacées globalement, sauf dans l'index
+        # des communautés et le catalogue d'imagerie, qui décrivent bien OSM.
+        override_file = WEB_DIR / "locale-fr.json"
+        dist_locale = id_dir / "locales" / "fr.min.json"
+        if override_file.exists() and dist_locale.exists():
+            _locale_cache: dict = {}
+
+            def patched_locale() -> dict:
+                if not _locale_cache:
+                    doc = json.loads(dist_locale.read_text(encoding="utf-8"))
+                    root = doc["fr"] if "fr" in doc and isinstance(doc["fr"], dict) else doc
+                    overrides = json.loads(override_file.read_text(encoding="utf-8"))
+                    for dotted, value in overrides.items():
+                        if dotted.startswith("_"):
+                            continue
+                        node = root
+                        *parents, leaf = dotted.split(".")
+                        for key in parents:
+                            node = node.setdefault(key, {})
+                        node[leaf] = value
+
+                    def scrub(obj, top):
+                        if isinstance(obj, dict):
+                            return {k: scrub(v, top if top else k) for k, v in obj.items()}
+                        if isinstance(obj, str) and top not in ("community", "imagery"):
+                            return obj.replace("OpenStreetMap", "BD France")
+                        return obj
+
+                    _locale_cache["doc"] = {"fr": scrub(root, None)} if "fr" in doc else scrub(root, None)
+                return _locale_cache["doc"]
+
+            @app.get("/locales/fr.min.json")
+            def locale_fr() -> dict:
+                return patched_locale()
+
         # Monté à la racine : `assetPath('')` d'iD résout ses ressources en
         # relatif depuis la page, donc `/iD.min.js`, `/img/...`, `/locales/...`.
         app.mount("/", StaticFiles(directory=id_dir), name="id")

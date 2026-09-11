@@ -1,0 +1,95 @@
+/* BD France Édition — habillage DSFR par-dessus iD.
+ *
+ * Deux leviers seulement, volontairement : les variables CSS qu'iD expose
+ * (couleurs d'action et de lien) et la police. On ne redessine pas ses
+ * panneaux — ils sont construits en D3 avec un CSS très spécifique, et les
+ * refaire en composants DSFR natifs reviendrait à forker l'éditeur.
+ *
+ * Palette DSFR : bleu France #000091, survol #1212ff, actif #2323ff. */
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+  font-family: Marianne, Arial, sans-serif;
+}
+
+/* ---------------------------------------------------------------- en-tête */
+
+.fr-header {
+  flex: none;
+}
+.fr-header__body-row {
+  padding: 0.5rem 0;
+}
+.fr-header__service-title {
+  font-size: 1.25rem;
+}
+.fr-header__service-tagline {
+  font-size: 0.8rem;
+}
+/* Le bloc-marque République française est réservé : on ne l'affiche pas.
+ * L'emplacement reste disponible pour une marque d'exploitant. */
+.fr-header__brand-top {
+  display: none;
+}
+
+/* --------------------------------------------------------------- éditeur */
+
+#id-container {
+  flex: 1 1 auto;
+  min-height: 0;   /* laisse iD prendre exactement l'espace restant */
+  position: relative;
+}
+
+.ideditor {
+  font-family: Marianne, Arial, sans-serif !important;
+  --link-color: #000091;
+  --link-focus-color: #1212ff;
+  --accent-color: #000091;
+}
+.ideditor button.action:hover {
+  background: #1212ff;
+}
+.ideditor button.save {
+  background-image: none;
+  background: #000091;
+}
+.ideditor button.save:hover {
+  background: #1212ff;
+}
+/* Sélection d'objet : le bleu iD (#7092ff) est proche du DSFR, on le laisse. */
+
+/* Le guide interactif d'iD repose sur un jeu de données fictif (« Three
+ * Rivers ») et parle d'OpenStreetMap à chaque étape : hors sujet ici. */
+.ideditor .modal-splash .walkthrough,
+.ideditor .help-pane .walkthrough,
+.ideditor button.walkthrough {
+  display: none !important;
+}
+/* Appels aux dons et index des communautés OSM sur l'écran de succès. */
+.ideditor .save-success .save-supporting,
+.ideditor .save-success .save-communities,
+.ideditor .save-success .community-index {
+  display: none !important;
+}
+
+/* ------------------------------------------------------------ pied de page */
+
+.bdf-footer {
+  flex: none;
+  font-size: 0.75rem;
+  line-height: 1.4;
+  padding: 0.35rem 1rem;
+  background: #f6f6f6;
+  border-top: 1px solid #ddd;
+  color: #3a3a3a;
+}
+.bdf-footer a {
+  color: #000091;
+}

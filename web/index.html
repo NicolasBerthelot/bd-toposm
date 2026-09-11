@@ -1,68 +1,85 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-fr-scheme="light">
   <head>
     <meta charset="utf-8">
-    <title>iD — BD TOPO® / Vienne</title>
-    <link rel="stylesheet" href="iD.css">
-    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
+    <title>BD France Édition</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <style>
-      html, body { width: 100%; height: 100%; margin: 0; padding: 0; overflow: hidden; }
-      @media (prefers-color-scheme: dark) { body { background-color: #212529; } }
-      #bdtopo-banner {
-        position: fixed; bottom: 0; left: 0; z-index: 1000;
-        font: 11px/1.5 system-ui, sans-serif;
-        background: rgba(0, 0, 145, .92); color: #fff;
-        padding: 3px 10px; border-top-right-radius: 4px;
-        pointer-events: none;
-      }
-      #bdtopo-error {
-        position: fixed; inset: 0; z-index: 2000; display: none;
-        font: 14px/1.6 system-ui, sans-serif; padding: 32px;
-        background: #fff; color: #1b1b1b;
-      }
-      #bdtopo-error code { background: #eee; padding: 1px 4px; }
-    </style>
+    <link rel="icon" type="image/png" href="data:image/png;base64,iVBORw0KGgo=">
+    <link rel="stylesheet" href="dsfr/dsfr.min.css">
+    <link rel="stylesheet" href="iD.css">
+    <link rel="stylesheet" href="bdfrance.css">
   </head>
 
   <body>
+    <!-- En-tête DSFR, sans bloc-marque République française (réservé). -->
+    <header role="banner" class="fr-header">
+      <div class="fr-header__body">
+        <div class="fr-container">
+          <div class="fr-header__body-row">
+            <div class="fr-header__brand fr-enlarge-link">
+              <div class="fr-header__brand-top"></div>
+              <div class="fr-header__service">
+                <a href="./" title="Accueil — BD France Édition">
+                  <p class="fr-header__service-title">BD France Édition</p>
+                </a>
+                <p class="fr-header__service-tagline">Données IGN au modèle OpenStreetMap — instance de démonstration, indépendante d'openstreetmap.org</p>
+              </div>
+            </div>
+            <div class="fr-header__tools">
+              <div class="fr-header__tools-links">
+                <ul class="fr-btns-group">
+                  <li>
+                    <a class="fr-btn fr-btn--tertiary" href="https://github.com/NicolasBerthelot/bd-toposm" target="_blank" rel="noopener">Code source</a>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </header>
+
     <div id="id-container"></div>
-    <div id="bdtopo-banner">Données IGN BD TOPO® 3.5 — instance locale, hors OpenStreetMap</div>
-    <div id="bdtopo-error"></div>
+
+    <footer class="bdf-footer" role="contentinfo">
+      Données : <strong>IGN — BD France</strong>, <a href="https://www.etalab.gouv.fr/licence-ouverte-open-licence/" target="_blank" rel="noopener">Licence Ouverte 2.0</a>.
+      Édition : <a href="https://github.com/openstreetmap/iD" target="_blank" rel="noopener">iD</a> (ISC).
+      Les modifications sont enregistrées dans cette instance uniquement.
+    </footer>
+
+    <div id="bdtopo-error" hidden style="position:fixed;inset:0;z-index:2000;padding:32px;background:#fff;font:14px/1.6 Marianne,Arial,sans-serif"></div>
 
     <script>
       // Emplacement d'ouverture par défaut : centre de Poitiers, au zoom 17.
       // iD ne charge les données qu'à partir du zoom 16 ; ouvrir plus large
       // afficherait une carte vide et laisserait croire à une panne.
       var DEFAUT = '#map=17.00/46.58020/0.34040';
-
       if (!window.location.hash) {
-        window.history.replaceState(null, '', window.location.pathname + DEFAUT);
+        window.history.replaceState(null, '', window.location.pathname + window.location.search + DEFAUT);
       }
 
       var container = document.getElementById('id-container');
       var script = document.createElement('script');
       script.src = 'iD.min.js';
       script.onload = demarrer;
-      script.onerror = function () {
-        echec('Le script <code>iD.min.js</code> n’a pas pu être chargé.');
-      };
+      script.onerror = function () { echec('Le script <code>iD.min.js</code> n’a pas pu être chargé.'); };
       document.head.appendChild(script);
 
       function echec(message) {
         var box = document.getElementById('bdtopo-error');
-        box.innerHTML = '<h2>iD n’a pas démarré</h2><p>' + message + '</p>';
-        box.style.display = 'block';
+        box.innerHTML = '<h2>BD France Édition n’a pas démarré</h2><p>' + message + '</p>';
+        box.hidden = false;
       }
 
       function demarrer() {
         if (typeof iD === 'undefined' || !iD.utilDetect().support) {
-          echec('Navigateur non pris en charge par iD.');
+          echec('Navigateur non pris en charge.');
           return;
         }
 
         var context = iD.coreContext()
           .assetPath('')
+          .locale('fr')
           .containerNode(container);
 
         // Bascule vers cette instance AVANT init : sans cela iD interroge
@@ -74,8 +91,8 @@
 
         context.init();
 
-        // Les limites administratives ne sont pas converties pour l'instant ;
-        // laisser le filtre actif éviterait un menu trompeur.
+        // Les limites administratives ne sont pas converties : laisser le
+        // filtre actif éviterait un menu trompeur.
         var q = iD.utilStringQs(window.location.hash);
         if (!q.hasOwnProperty('disable_features')) {
           context.features().disable('boundaries');
