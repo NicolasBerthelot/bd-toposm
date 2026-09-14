@@ -121,3 +121,20 @@ body {
   max-height: 60vh !important;
   overflow-y: auto !important;
 }
+
+/* ------------------------------------------------ liens : DSFR hors d'iD */
+
+/* Le DSFR restyle tout `a[href]` du document : soulignement en dégradé de
+   fond et, pour `target="_blank"`, une icône « lien sortant » en ::after.
+   À l'intérieur d'iD, ces règles se superposent au style propre de l'éditeur
+   et le soulignement s'étirait sous une icône absente. On rend à iD ses liens ;
+   le DSFR garde les nôtres (en-tête, pied de page, connexion), pour lesquels
+   les icônes sont désormais livrées (web/dsfr/icons/system). */
+.ideditor a[href] {
+  background-image: none;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.ideditor a[target="_blank"]::after {
+  content: none;
+}
