@@ -262,3 +262,36 @@ def test_metadonnees_communes_fusionnees():
     rules = RuleSet.load(RULES_DIR / "cimetiere.yaml")
     assert "date_creation" in rules.unmapped          # commun
     assert "importance" in rules.unmapped             # local
+
+
+# --------------------------------------------------------- garde-fous socle
+
+
+def test_aucune_regle_du_socle_n_a_de_condition_nulle():
+    """Une clé `when:` vide (YAML `null`) équivaut à « toujours vrai ».
+
+    C'est ainsi qu'un `motif: >-` mal placé a un jour avalé le bloc `all_of`
+    qui le suivait et transformé chaque bâtiment de Poitiers en lieu de culte.
+    Une règle qui *veut* s'appliquer partout n'écrit pas `when:` du tout.
+    """
+    from bdtopo_osm.pipeline import socle_layers
+
+    for layer in socle_layers():
+        rules = RuleSet.load(RULES_DIR / f"{layer}.yaml")
+        for index, rule in enumerate(rules.rules):
+            for candidate in [rule, *rule.get("first_match", [])]:
+                assert not ("when" in candidate and candidate["when"] is None), (
+                    f"{layer} : règle {index} a `when: null`"
+                )
+
+
+def test_une_maison_n_est_pas_un_lieu_de_culte():
+    rules = RuleSet.load(RULES_DIR / "batiment.yaml")
+    maison = rules.apply({"cleabs": "B1", "nature": "Indifférenciée", "usage_1": "Résidentiel",
+                          "nombre_de_logements": 1.0})
+    assert maison["building"] == "house"
+    assert "amenity" not in maison and "religion" not in maison
+
+    eglise = rules.apply({"cleabs": "B2", "nature": "Eglise", "usage_1": "Religieux"})
+    assert eglise["building"] == "church"
+    assert eglise["amenity"] == "place_of_worship"
