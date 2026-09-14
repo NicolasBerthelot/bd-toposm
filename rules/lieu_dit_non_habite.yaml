@@ -22,6 +22,8 @@ rules:
       # portée par `zone_de_vegetation`. Poser `natural=wood` sur un point
       # dupliquerait l'information sans en ajouter.
       - when: {}
+        motif: >-
+          Un bois nommé reste un toponyme : son emprise, quand elle existe, est portée par `zone_de_vegetation`. `natural=wood` sur un point dupliquerait l'information.
         set: {place: locality}
 
   - set:

@@ -284,3 +284,35 @@ def test_tampon_preserve_le_contenu_court():
 
 def test_healthz_est_leger(client):
     assert client.get("/healthz").json() == {"ok": True}
+
+
+# ------------------------------------------------------- lecture unitaire
+
+
+def test_lecture_unitaire_et_full(client):
+    payload = client.get("/api/0.6/map.json", params={"bbox": "0.0,0.0,0.4,0.4"}).json()
+    route = next(e for e in payload["elements"] if e["type"] == "way" and e.get("tags", {}).get("highway"))
+    relation = next(e for e in payload["elements"] if e["type"] == "relation")
+
+    seul = client.get(f"/api/0.6/way/{route['id']}.json").json()["elements"]
+    assert [e["type"] for e in seul] == ["way"]
+
+    full = client.get(f"/api/0.6/way/{route['id']}/full.json").json()["elements"]
+    assert {e["id"] for e in full if e["type"] == "node"} == set(route["nodes"])
+
+    rfull = client.get(f"/api/0.6/relation/{relation['id']}/full.json").json()["elements"]
+    assert {e["id"] for e in rfull if e["type"] == "way"} == {m["ref"] for m in relation["members"]}
+    assert any(e["type"] == "node" for e in rfull)  # nœuds des ways membres inclus
+
+    membre = relation["members"][0]["ref"]
+    rels = client.get(f"/api/0.6/way/{membre}/relations.json").json()["elements"]
+    assert [e["id"] for e in rels] == [relation["id"]]
+
+    ways = client.get(f"/api/0.6/node/{route['nodes'][0]}/ways.json").json()["elements"]
+    assert route["id"] in {e["id"] for e in ways}
+
+    multi = client.get("/api/0.6/ways.json", params={"ways": f"{route['id']},{membre}"}).json()["elements"]
+    assert {e["id"] for e in multi} == {route["id"], membre}
+
+    assert client.get("/api/0.6/way/999999.json").status_code == 404
+    assert client.get("/api/0.6/node/1/full.json").status_code == 404

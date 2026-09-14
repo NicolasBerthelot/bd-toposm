@@ -128,7 +128,83 @@
           var reponse = docs && (key.indexOf('bdtopo:') === 0 || key === 'ref:FR:IGN:cleabs')
             ? documentation(context, docs, key, params.value) : null;
           if (reponse) { callback(null, reponse); return; }
-          return original.call(this, params, callback);
+
+          // Clé OSM sur un objet issu de la BD Topo : on explique d'où elle
+          // vient (règle, attributs lus, motif), puis on laisse la référence
+          // OSM habituelle compléter — c'est la documentation du format.
+          var self = this;
+          explication(context, key).then(function (why) {
+            if (!why) { original.call(self, params, callback); return; }
+            original.call(self, params, function (err, osmDocs) {
+              callback(null, fusionner(why, osmDocs, key, params.value));
+            });
+          });
+        };
+      }
+
+      var EXPLICATIONS = {};  // cache par identifiant d'objet
+
+      function explication(context, key) {
+        var ids = context.selectedIDs();
+        if (ids.length !== 1) return Promise.resolve(null);
+        var entite = context.hasEntity(ids[0]);
+        if (!entite || !entite.tags['ref:FR:IGN:cleabs']) return Promise.resolve(null);
+        var osmId = entite.osmId();
+        var cle = entite.type + '/' + osmId;
+        if (!EXPLICATIONS[cle]) {
+          EXPLICATIONS[cle] = fetch('api/bdfrance/explain/' + cle)
+            .then(function (r) { return r.ok ? r.json() : null; })
+            .catch(function () { return null; });
+        }
+        return EXPLICATIONS[cle].then(function (data) {
+          return data && data.tags && data.tags[key] ? data.tags[key] : null;
+        });
+      }
+
+      var MODES = {
+        first_match: 'classification exclusive, première branche qui correspond',
+        map: 'correspondance de valeurs',
+        copy: 'valeur reprise de la BD Topo',
+        literal: 'valeur fixe posée par la conversion',
+        compute: 'arbitrage par fonction',
+        set: 'règle'
+      };
+
+      function fusionner(why, osmDocs, key, value) {
+        var texte = function (sel) {
+          var bloc = sel.append('div').attr('class', 'bdf-why');
+          bloc.append('strong').text('Déduit de la BD TOPO® : ');
+          var champs = Object.keys(why.fields || {});
+          if (champs.length) {
+            bloc.append('span').text(champs.map(function (f) {
+              var v = why.fields[f];
+              return f + ' = ' + (v === null || v === undefined ? '(vide)' : '« ' + v + ' »');
+            }).join(' ; '));
+          } else {
+            bloc.append('span').text('aucun attribut — ' + (MODES[why.mode] || why.mode));
+          }
+          if (why.condition) {
+            bloc.append('div').text('Règle : ' + why.condition
+              + (why.branch ? ' (branche ' + why.branch + ', ' + MODES.first_match + ')' : ''));
+          } else if (why.mode && MODES[why.mode]) {
+            bloc.append('div').text('Règle : ' + MODES[why.mode]);
+          }
+          if (why.motif) {
+            bloc.append('div').attr('class', 'bdf-why-motif').text('Motif : ' + why.motif);
+          }
+          if (osmDocs && osmDocs.description) {
+            sel.append('div').attr('class', 'bdf-why-osm').text('Référence OSM : ');
+            sel.call(osmDocs.description);
+          }
+        };
+        var base = osmDocs || {};
+        return {
+          title: base.title || (key + '=' + (value || why.value)),
+          description: texte,
+          descriptionLocaleCode: 'fr',
+          editURL: base.editURL,
+          imageURL: base.imageURL,
+          wiki: base.wiki
         };
       }
 

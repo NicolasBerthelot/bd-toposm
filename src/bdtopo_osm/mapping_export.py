@@ -139,9 +139,12 @@ def rows_for_ruleset(rules: RuleSet) -> list[Row]:
                 note = f"branche {i} — exclusif, première correspondance"
                 if when:
                     note += f" ; sous condition {cond}"
+                if branch.get("motif"):
+                    note += " ; motif : " + " ".join(str(branch["motif"]).split())
                 rows.extend(_rows_for_set(branch.get("set"), bcond, bfields, note))
         else:
-            rows.extend(_rows_for_set(rule.get("set"), cond, fields, ""))
+            motif = " ".join(str(rule.get("motif", "") or "").split())
+            rows.extend(_rows_for_set(rule.get("set"), cond, fields, f"motif : {motif}" if motif else ""))
 
         compute = rule.get("compute")
         if compute:

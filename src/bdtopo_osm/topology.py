@@ -96,6 +96,10 @@ class OsmBuilder:
     def counts(self) -> dict[str, int]:
         raise NotImplementedError
 
+    def record_provenance(self, kind: str, element_id: int, layer: str, attributes: dict) -> None:
+        """Attributs source consultés pour cet élément (cf. store.provenance)."""
+        raise NotImplementedError
+
     # ---------------------------------------------------------------- nœuds
 
     def node_id(self, lon: float, lat: float) -> int:
@@ -243,12 +247,16 @@ class MemoryBuilder(OsmBuilder):
         self.nodes: dict[int, Node] = {}
         self.ways: dict[int, Way] = {}
         self.relations: dict[int, Relation] = {}
+        self.provenance: dict[tuple[str, int], tuple[str, dict]] = {}
         self._next = {"node": 1, "way": 1, "relation": 1}
 
     def _allocate(self, kind: str) -> int:
         value = self._next[kind]
         self._next[kind] = value + 1
         return value
+
+    def record_provenance(self, kind, element_id, layer, attributes) -> None:
+        self.provenance[(kind, element_id)] = (layer, attributes)
 
     def _lookup_node(self, lon: float, lat: float) -> int | None:
         return self._node_by_coord.get((lon, lat))

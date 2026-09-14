@@ -291,6 +291,81 @@ def computer(name: str):
     return register
 
 
+def _plain(values: dict) -> dict:
+    """Valeurs sérialisables et lisibles : pas de NaN, pas de numpy."""
+    out = {}
+    for k, v in values.items():
+        if is_empty(v):
+            out[k] = None
+        elif isinstance(v, bool):
+            out[k] = v
+        elif isinstance(v, (int, float, str)):
+            out[k] = v
+        else:
+            out[k] = format_value(v)
+    return out
+
+
+# ------------------------------------------------------------------ explication
+
+
+@dataclass
+class Explanation:
+    """Pourquoi un tag OSM a cette valeur sur cet objet.
+
+    `fields` : les attributs BD Topo consultés, avec leur valeur sur l'objet.
+    `condition` : la condition de la règle qui a produit le tag, en clair.
+    `motif` : la justification rédigée dans la règle (`motif:`), s'il y en a une.
+    `mode` : `set` (règle simple), `first_match` (classification exclusive,
+    avec le rang de la branche), `compute` (fonction Python), `map`
+    (correspondance de valeurs), `literal`, `copy`.
+    """
+
+    key: str
+    value: str
+    fields: dict[str, Any] = field(default_factory=dict)
+    condition: str = ""
+    motif: str = ""
+    mode: str = "set"
+    branch: int | None = None
+
+
+def describe_condition(cond: Any) -> str:
+    """Condition en clair, pour les explications et la table de correspondance."""
+    if not cond:
+        return ""
+    parts = []
+    for key, spec in cond.items():
+        if key == "all_of":
+            parts.append(" et ".join(f"({describe_condition(c)})" for c in spec))
+        elif key == "any_of":
+            parts.append(" ou ".join(f"({describe_condition(c)})" for c in spec))
+        elif key == "not":
+            parts.append(f"non ({describe_condition(spec)})")
+        elif isinstance(spec, list):
+            parts.append(f"{key} ∈ {{{', '.join(str(v) for v in spec)}}}")
+        elif isinstance(spec, dict):
+            for op, val in spec.items():
+                sym = {"gt": ">", "gte": "≥", "lt": "<", "lte": "≤"}.get(op)
+                if op in ("present", "absent"):
+                    parts.append(f"{key} {'renseigné' if (op == 'present') == bool(val) else 'vide'}")
+                elif op == "contains":
+                    parts.append(f"{key} contient « {val} »")
+                elif op == "matches":
+                    parts.append(f"{key} ~ /{val}/")
+                elif op in ("in", "not_in"):
+                    parts.append(f"{key} {'∈' if op == 'in' else '∉'} {{{', '.join(str(v) for v in val)}}}")
+                elif sym:
+                    parts.append(f"{key} {sym} {val}")
+                else:
+                    parts.append(f"{key} {op} {val}")
+        elif isinstance(spec, bool):
+            parts.append(f"{key} = {'vrai' if spec else 'faux'}")
+        else:
+            parts.append(f"{key} = {spec}")
+    return " et ".join(parts)
+
+
 # ----------------------------------------------------------------------- règles
 
 
@@ -374,6 +449,75 @@ class RuleSet:
             else:
                 self._merge(tags, rule, feature)
         return tags
+
+    def explain(self, feature: dict) -> dict[str, Explanation]:
+        """Même parcours que `apply`, mais en gardant la trace de chaque tag.
+
+        Le résultat est la réponse à « pourquoi cet objet porte-t-il ce tag ? » :
+        la dernière règle à avoir écrit la clé l'emporte, exactement comme dans
+        `apply`, et l'explication porte les attributs source qu'elle a lus.
+        """
+        if self.dropped_reason(feature) is not None:
+            return {}
+        out: dict[str, Explanation] = {}
+        for rule in self.rules:
+            if not evaluate(rule.get("when"), feature):
+                continue
+            group_cond = describe_condition(rule.get("when"))
+            group_motif = str(rule.get("motif", "") or "")
+            if "first_match" in rule:
+                for rank, branch in enumerate(rule["first_match"], 1):
+                    if evaluate(branch.get("when"), feature):
+                        cond = describe_condition(branch.get("when")) or "(branche par défaut)"
+                        if group_cond:
+                            cond = f"{group_cond} ; {cond}"
+                        self._explain_rule(
+                            out, branch, feature, cond,
+                            str(branch.get("motif", "") or "") or group_motif, "first_match", rank,
+                        )
+                        break
+            else:
+                self._explain_rule(out, rule, feature, group_cond, group_motif, "set", None)
+        return out
+
+    def _explain_rule(self, out, rule, feature, cond, motif, mode, rank) -> None:
+        cond_fields = condition_fields(rule.get("when"))
+        for key, spec in (rule.get("set") or {}).items():
+            value = resolve_value(spec, feature)
+            if value is None or value == "":
+                continue
+            used = {f: feature.get(f) for f in cond_fields}
+            kind = mode
+            if isinstance(spec, dict) and "from" in spec:
+                used[spec["from"]] = feature.get(spec["from"])
+                kind = "map" if "map" in spec else "copy"
+            elif isinstance(spec, str) and _PLACEHOLDER.search(spec):
+                for f in _PLACEHOLDER.findall(spec):
+                    used[f] = feature.get(f)
+                kind = "copy"
+            elif mode == "set" and not cond_fields:
+                kind = "literal"
+            out[key] = Explanation(
+                key=key, value=value, fields=_plain(used), condition=cond,
+                motif=motif, mode=kind, branch=rank,
+            )
+        for key in rule.get("unset") or []:
+            out.pop(key, None)
+        compute = rule.get("compute")
+        if compute:
+            fn = COMPUTERS.get(compute["use"])
+            if fn is None:
+                return
+            args = compute.get("args", {})
+            used = {v: feature.get(v) for v in args.values() if isinstance(v, str)}
+            for key, value in fn(feature, args).items():
+                if value is None or value == "":
+                    continue
+                out[key] = Explanation(
+                    key=key, value=str(value), fields=_plain(used),
+                    condition=f"fonction {compute['use']}", motif=motif or str(rule.get("motif", "") or ""),
+                    mode="compute", branch=None,
+                )
 
     def _merge(self, tags: dict[str, str], rule: dict, feature: dict) -> None:
         for key, spec in (rule.get("set") or {}).items():

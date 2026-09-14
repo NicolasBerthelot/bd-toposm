@@ -56,6 +56,7 @@ class SqliteBuilder(OsmBuilder):
         self._members: list[tuple] = []
         self._relation_tags: list[tuple] = []
         self._idmap: list[tuple] = []
+        self._provenance: list[tuple] = []
         self._pending = 0
         self._final_counts: dict[str, int] | None = None
 
@@ -114,6 +115,9 @@ class SqliteBuilder(OsmBuilder):
         if cleabs:
             self._idmap.append((cleabs, "relation", relation_id))
         self._bump()
+
+    def record_provenance(self, kind, element_id, layer, attributes) -> None:
+        self._provenance.append((kind, element_id, layer, store.pack_provenance(attributes)))
 
     def counts(self) -> dict[str, int]:
         # Après `finalize`, la connexion est rendue au pipeline qui la ferme :
@@ -184,6 +188,13 @@ class SqliteBuilder(OsmBuilder):
                 self._idmap,
             )
             self._idmap.clear()
+        if self._provenance:
+            con.executemany(
+                "INSERT OR REPLACE INTO provenance (element_type, element_id, layer, data) "
+                "VALUES (?, ?, ?, ?)",
+                self._provenance,
+            )
+            self._provenance.clear()
         self._pending = 0
 
     def commit_layer(self) -> None:

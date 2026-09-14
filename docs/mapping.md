@@ -51,43 +51,43 @@ Réseau routier BD Topo 3.5 → OSM. La classification `highway` suit une matric
 | etat_de_l_objet | etat_de_l_objet = En projet | (entité écartée) |  | Tracé non construit, sans existence physique sur le terrain (8 entités dans la Vienne). OSM proscrit `highway=proposed` en dehors de projets documentés et validés localement. |
 | — | (toujours) | `source` | IGN BD TOPO® 3.5 |  |
 | cleabs | (valeur reprise telle quelle) | `ref:FR:IGN:cleabs` | {cleabs} |  |
-| nature_de_la_restriction | nature_de_la_restriction ∈ {Piste cyclable, Voie verte} | `highway` | cycleway | branche 1 — exclusif, première correspondance |
+| nature_de_la_restriction | nature_de_la_restriction ∈ {Piste cyclable, Voie verte} | `highway` | cycleway | branche 1 — exclusif, première correspondance ; motif : La restriction décrit ce qu'EST la voie — un aménagement cyclable propre — pas une contrainte qui s'y ajoute. Elle prime donc sur la nature. |
 | etat_de_l_objet | etat_de_l_objet = En construction | `highway` | construction | branche 2 — exclusif, première correspondance |
 | nature | nature = Escalier | `highway` | steps | branche 3 — exclusif, première correspondance |
 | nature | nature = Sentier | `highway` | path | branche 4 — exclusif, première correspondance |
 | nature | nature = Bac ou liaison maritime | `route` | ferry | branche 5 — exclusif, première correspondance |
 | nature | nature = Bac ou liaison maritime | `motor_vehicle` | yes | branche 5 — exclusif, première correspondance |
-| nature | nature = Chemin | `highway` | track | branche 6 — exclusif, première correspondance |
-| nature | nature = Chemin | `surface` | unpaved | branche 6 — exclusif, première correspondance |
-| nature | nature = Route empierrée | `highway` | unclassified | branche 7 — exclusif, première correspondance |
-| nature | nature = Route empierrée | `surface` | unpaved | branche 7 — exclusif, première correspondance |
-| importance | 1 | `highway` | motorway_link | branche 8 — exclusif, première correspondance ; si nature = Bretelle |
-| importance | 2 | `highway` | trunk_link | branche 8 — exclusif, première correspondance ; si nature = Bretelle |
-| importance | 3 | `highway` | primary_link | branche 8 — exclusif, première correspondance ; si nature = Bretelle |
-| importance | 4 | `highway` | secondary_link | branche 8 — exclusif, première correspondance ; si nature = Bretelle |
-| importance | 5 | `highway` | tertiary_link | branche 8 — exclusif, première correspondance ; si nature = Bretelle |
-| importance | 6 | `highway` | tertiary_link | branche 8 — exclusif, première correspondance ; si nature = Bretelle |
-| importance | (autre valeur) | `highway` | tertiary_link | branche 8 — exclusif, première correspondance ; si nature = Bretelle |
-| nature | nature = Rond-point | `junction` | roundabout | branche 9 — exclusif, première correspondance |
-| nature | nature = Rond-point | `oneway` | yes | branche 9 — exclusif, première correspondance |
-| importance | 1 | `highway` | primary | branche 9 — exclusif, première correspondance ; si nature = Rond-point |
-| importance | 2 | `highway` | primary | branche 9 — exclusif, première correspondance ; si nature = Rond-point |
-| importance | 3 | `highway` | secondary | branche 9 — exclusif, première correspondance ; si nature = Rond-point |
-| importance | 4 | `highway` | tertiary | branche 9 — exclusif, première correspondance ; si nature = Rond-point |
-| importance | 5 | `highway` | unclassified | branche 9 — exclusif, première correspondance ; si nature = Rond-point |
-| importance | 6 | `highway` | unclassified | branche 9 — exclusif, première correspondance ; si nature = Rond-point |
-| importance | (autre valeur) | `highway` | unclassified | branche 9 — exclusif, première correspondance ; si nature = Rond-point |
-| cpx_classement_administratif | cpx_classement_administratif contient « Autoroute » | `highway` | motorway | branche 10 — exclusif, première correspondance |
+| nature | nature = Chemin | `highway` | track | branche 6 — exclusif, première correspondance ; motif : « Chemin » BD Topo : prévu pour les véhicules ou engins d'exploitation, pas forcément carrossable par tous les temps — c'est la définition d'un `track`. |
+| nature | nature = Chemin | `surface` | unpaved | branche 6 — exclusif, première correspondance ; motif : « Chemin » BD Topo : prévu pour les véhicules ou engins d'exploitation, pas forcément carrossable par tous les temps — c'est la définition d'un `track`. |
+| nature | nature = Route empierrée | `highway` | unclassified | branche 7 — exclusif, première correspondance ; motif : Carrossable et publique selon la source (13 privées sur 56 369 dans la Vienne, 54 502 en accès libre) : donc `unclassified`, pas `track`, qui sous-entendrait un usage agricole non établi. Le revêtement est porté par `surface`, requalifiable. |
+| nature | nature = Route empierrée | `surface` | unpaved | branche 7 — exclusif, première correspondance ; motif : Carrossable et publique selon la source (13 privées sur 56 369 dans la Vienne, 54 502 en accès libre) : donc `unclassified`, pas `track`, qui sous-entendrait un usage agricole non établi. Le revêtement est porté par `surface`, requalifiable. |
+| importance | 1 | `highway` | motorway_link | branche 8 — exclusif, première correspondance ; motif : La BD Topo ne dit pas quelle route la bretelle raccorde ; la classe est déduite de `importance`. IGN affecte à une bretelle « l'importance la moins importante des deux tronçons qu'elle joint ». Approximation à remplacer par une propagation depuis les tronçons connectés. ; si nature = Bretelle |
+| importance | 2 | `highway` | trunk_link | branche 8 — exclusif, première correspondance ; motif : La BD Topo ne dit pas quelle route la bretelle raccorde ; la classe est déduite de `importance`. IGN affecte à une bretelle « l'importance la moins importante des deux tronçons qu'elle joint ». Approximation à remplacer par une propagation depuis les tronçons connectés. ; si nature = Bretelle |
+| importance | 3 | `highway` | primary_link | branche 8 — exclusif, première correspondance ; motif : La BD Topo ne dit pas quelle route la bretelle raccorde ; la classe est déduite de `importance`. IGN affecte à une bretelle « l'importance la moins importante des deux tronçons qu'elle joint ». Approximation à remplacer par une propagation depuis les tronçons connectés. ; si nature = Bretelle |
+| importance | 4 | `highway` | secondary_link | branche 8 — exclusif, première correspondance ; motif : La BD Topo ne dit pas quelle route la bretelle raccorde ; la classe est déduite de `importance`. IGN affecte à une bretelle « l'importance la moins importante des deux tronçons qu'elle joint ». Approximation à remplacer par une propagation depuis les tronçons connectés. ; si nature = Bretelle |
+| importance | 5 | `highway` | tertiary_link | branche 8 — exclusif, première correspondance ; motif : La BD Topo ne dit pas quelle route la bretelle raccorde ; la classe est déduite de `importance`. IGN affecte à une bretelle « l'importance la moins importante des deux tronçons qu'elle joint ». Approximation à remplacer par une propagation depuis les tronçons connectés. ; si nature = Bretelle |
+| importance | 6 | `highway` | tertiary_link | branche 8 — exclusif, première correspondance ; motif : La BD Topo ne dit pas quelle route la bretelle raccorde ; la classe est déduite de `importance`. IGN affecte à une bretelle « l'importance la moins importante des deux tronçons qu'elle joint ». Approximation à remplacer par une propagation depuis les tronçons connectés. ; si nature = Bretelle |
+| importance | (autre valeur) | `highway` | tertiary_link | branche 8 — exclusif, première correspondance ; motif : La BD Topo ne dit pas quelle route la bretelle raccorde ; la classe est déduite de `importance`. IGN affecte à une bretelle « l'importance la moins importante des deux tronçons qu'elle joint ». Approximation à remplacer par une propagation depuis les tronçons connectés. ; si nature = Bretelle |
+| nature | nature = Rond-point | `junction` | roundabout | branche 9 — exclusif, première correspondance ; motif : `junction=roundabout` est une forme, pas une classe : la classe vient de `importance`, à défaut de connaître la route la plus importante qui aboutit à l'anneau. |
+| nature | nature = Rond-point | `oneway` | yes | branche 9 — exclusif, première correspondance ; motif : `junction=roundabout` est une forme, pas une classe : la classe vient de `importance`, à défaut de connaître la route la plus importante qui aboutit à l'anneau. |
+| importance | 1 | `highway` | primary | branche 9 — exclusif, première correspondance ; motif : `junction=roundabout` est une forme, pas une classe : la classe vient de `importance`, à défaut de connaître la route la plus importante qui aboutit à l'anneau. ; si nature = Rond-point |
+| importance | 2 | `highway` | primary | branche 9 — exclusif, première correspondance ; motif : `junction=roundabout` est une forme, pas une classe : la classe vient de `importance`, à défaut de connaître la route la plus importante qui aboutit à l'anneau. ; si nature = Rond-point |
+| importance | 3 | `highway` | secondary | branche 9 — exclusif, première correspondance ; motif : `junction=roundabout` est une forme, pas une classe : la classe vient de `importance`, à défaut de connaître la route la plus importante qui aboutit à l'anneau. ; si nature = Rond-point |
+| importance | 4 | `highway` | tertiary | branche 9 — exclusif, première correspondance ; motif : `junction=roundabout` est une forme, pas une classe : la classe vient de `importance`, à défaut de connaître la route la plus importante qui aboutit à l'anneau. ; si nature = Rond-point |
+| importance | 5 | `highway` | unclassified | branche 9 — exclusif, première correspondance ; motif : `junction=roundabout` est une forme, pas une classe : la classe vient de `importance`, à défaut de connaître la route la plus importante qui aboutit à l'anneau. ; si nature = Rond-point |
+| importance | 6 | `highway` | unclassified | branche 9 — exclusif, première correspondance ; motif : `junction=roundabout` est une forme, pas une classe : la classe vient de `importance`, à défaut de connaître la route la plus importante qui aboutit à l'anneau. ; si nature = Rond-point |
+| importance | (autre valeur) | `highway` | unclassified | branche 9 — exclusif, première correspondance ; motif : `junction=roundabout` est une forme, pas une classe : la classe vient de `importance`, à défaut de connaître la route la plus importante qui aboutit à l'anneau. ; si nature = Rond-point |
+| cpx_classement_administratif | cpx_classement_administratif contient « Autoroute » | `highway` | motorway | branche 10 — exclusif, première correspondance ; motif : Le classement administratif fait autorité quand il est renseigné (15,7 % des tronçons de la Vienne). |
 | cpx_classement_administratif, nature | (cpx_classement_administratif contient « Nationale ») et (nature ∈ {Type autoroutier, Route à 2 chaussées}) | `highway` | trunk | branche 11 — exclusif, première correspondance |
 | cpx_classement_administratif | cpx_classement_administratif contient « Nationale » | `highway` | primary | branche 12 — exclusif, première correspondance |
-| importance | 1 | `highway` | primary | branche 13 — exclusif, première correspondance ; si cpx_classement_administratif contient « Départementale » |
-| importance | 2 | `highway` | primary | branche 13 — exclusif, première correspondance ; si cpx_classement_administratif contient « Départementale » |
-| importance | 3 | `highway` | secondary | branche 13 — exclusif, première correspondance ; si cpx_classement_administratif contient « Départementale » |
-| importance | 4 | `highway` | tertiary | branche 13 — exclusif, première correspondance ; si cpx_classement_administratif contient « Départementale » |
-| importance | 5 | `highway` | unclassified | branche 13 — exclusif, première correspondance ; si cpx_classement_administratif contient « Départementale » |
-| importance | 6 | `highway` | unclassified | branche 13 — exclusif, première correspondance ; si cpx_classement_administratif contient « Départementale » |
-| importance | (autre valeur) | `highway` | unclassified | branche 13 — exclusif, première correspondance ; si cpx_classement_administratif contient « Départementale » |
-| cpx_numero, nature | nature = Type autoroutier et cpx_numero ~ /^[Aa]/ | `highway` | motorway | branche 14 — exclusif, première correspondance |
+| importance | 1 | `highway` | primary | branche 13 — exclusif, première correspondance ; motif : Départementale : la classe suit `importance`, qu'IGN définit comme une hiérarchisation fonctionnelle du réseau (non administrative). Mesuré : importance 4 = 29 790 D sur 34 022 tronçons. ; si cpx_classement_administratif contient « Départementale » |
+| importance | 2 | `highway` | primary | branche 13 — exclusif, première correspondance ; motif : Départementale : la classe suit `importance`, qu'IGN définit comme une hiérarchisation fonctionnelle du réseau (non administrative). Mesuré : importance 4 = 29 790 D sur 34 022 tronçons. ; si cpx_classement_administratif contient « Départementale » |
+| importance | 3 | `highway` | secondary | branche 13 — exclusif, première correspondance ; motif : Départementale : la classe suit `importance`, qu'IGN définit comme une hiérarchisation fonctionnelle du réseau (non administrative). Mesuré : importance 4 = 29 790 D sur 34 022 tronçons. ; si cpx_classement_administratif contient « Départementale » |
+| importance | 4 | `highway` | tertiary | branche 13 — exclusif, première correspondance ; motif : Départementale : la classe suit `importance`, qu'IGN définit comme une hiérarchisation fonctionnelle du réseau (non administrative). Mesuré : importance 4 = 29 790 D sur 34 022 tronçons. ; si cpx_classement_administratif contient « Départementale » |
+| importance | 5 | `highway` | unclassified | branche 13 — exclusif, première correspondance ; motif : Départementale : la classe suit `importance`, qu'IGN définit comme une hiérarchisation fonctionnelle du réseau (non administrative). Mesuré : importance 4 = 29 790 D sur 34 022 tronçons. ; si cpx_classement_administratif contient « Départementale » |
+| importance | 6 | `highway` | unclassified | branche 13 — exclusif, première correspondance ; motif : Départementale : la classe suit `importance`, qu'IGN définit comme une hiérarchisation fonctionnelle du réseau (non administrative). Mesuré : importance 4 = 29 790 D sur 34 022 tronçons. ; si cpx_classement_administratif contient « Départementale » |
+| importance | (autre valeur) | `highway` | unclassified | branche 13 — exclusif, première correspondance ; motif : Départementale : la classe suit `importance`, qu'IGN définit comme une hiérarchisation fonctionnelle du réseau (non administrative). Mesuré : importance 4 = 29 790 D sur 34 022 tronçons. ; si cpx_classement_administratif contient « Départementale » |
+| cpx_numero, nature | nature = Type autoroutier et cpx_numero ~ /^[Aa]/ | `highway` | motorway | branche 14 — exclusif, première correspondance ; motif : Type autoroutier sans classement Autoroute : le préfixe du numéro tranche (A10 → motorway ; N147 en voie express → trunk). |
 | nature | nature = Type autoroutier | `highway` | trunk | branche 15 — exclusif, première correspondance |
 | importance | 1 | `highway` | trunk | branche 16 — exclusif, première correspondance ; si nature = Route à 2 chaussées |
 | importance | 2 | `highway` | primary | branche 16 — exclusif, première correspondance ; si nature = Route à 2 chaussées |
@@ -96,14 +96,14 @@ Réseau routier BD Topo 3.5 → OSM. La classification `highway` suit une matric
 | importance | 5 | `highway` | unclassified | branche 16 — exclusif, première correspondance ; si nature = Route à 2 chaussées |
 | importance | 6 | `highway` | unclassified | branche 16 — exclusif, première correspondance ; si nature = Route à 2 chaussées |
 | importance | (autre valeur) | `highway` | unclassified | branche 16 — exclusif, première correspondance ; si nature = Route à 2 chaussées |
-| importance, nature, urbain | nature = Route à 1 chaussée et importance = 5 et urbain = vrai | `highway` | residential | branche 17 — exclusif, première correspondance |
-| importance | 1 | `highway` | primary | branche 18 — exclusif, première correspondance ; si nature = Route à 1 chaussée |
-| importance | 2 | `highway` | primary | branche 18 — exclusif, première correspondance ; si nature = Route à 1 chaussée |
-| importance | 3 | `highway` | secondary | branche 18 — exclusif, première correspondance ; si nature = Route à 1 chaussée |
-| importance | 4 | `highway` | tertiary | branche 18 — exclusif, première correspondance ; si nature = Route à 1 chaussée |
-| importance | 5 | `highway` | unclassified | branche 18 — exclusif, première correspondance ; si nature = Route à 1 chaussée |
-| importance | 6 | `highway` | service | branche 18 — exclusif, première correspondance ; si nature = Route à 1 chaussée |
-| importance | (autre valeur) | `highway` | unclassified | branche 18 — exclusif, première correspondance ; si nature = Route à 1 chaussée |
+| importance, nature, urbain | nature = Route à 1 chaussée et importance = 5 et urbain = vrai | `highway` | residential | branche 17 — exclusif, première correspondance ; motif : Importance 5 = desserte locale (129 135 tronçons, le gros du réseau). `urbain` sépare la voirie de lotissement (`residential`) de la voie communale rase-campagne (`unclassified`). |
+| importance | 1 | `highway` | primary | branche 18 — exclusif, première correspondance ; motif : Repli nature × importance pour les 84,3 % de tronçons sans classement administratif. ; si nature = Route à 1 chaussée |
+| importance | 2 | `highway` | primary | branche 18 — exclusif, première correspondance ; motif : Repli nature × importance pour les 84,3 % de tronçons sans classement administratif. ; si nature = Route à 1 chaussée |
+| importance | 3 | `highway` | secondary | branche 18 — exclusif, première correspondance ; motif : Repli nature × importance pour les 84,3 % de tronçons sans classement administratif. ; si nature = Route à 1 chaussée |
+| importance | 4 | `highway` | tertiary | branche 18 — exclusif, première correspondance ; motif : Repli nature × importance pour les 84,3 % de tronçons sans classement administratif. ; si nature = Route à 1 chaussée |
+| importance | 5 | `highway` | unclassified | branche 18 — exclusif, première correspondance ; motif : Repli nature × importance pour les 84,3 % de tronçons sans classement administratif. ; si nature = Route à 1 chaussée |
+| importance | 6 | `highway` | service | branche 18 — exclusif, première correspondance ; motif : Repli nature × importance pour les 84,3 % de tronçons sans classement administratif. ; si nature = Route à 1 chaussée |
+| importance | (autre valeur) | `highway` | unclassified | branche 18 — exclusif, première correspondance ; motif : Repli nature × importance pour les 84,3 % de tronçons sans classement administratif. ; si nature = Route à 1 chaussée |
 | — | (sinon) | `highway` | road | branche 19 — exclusif, première correspondance |
 | nom_voie_ban_gauche, nom_voie_ban_droite, nom_collaboratif_gauche, nom_collaboratif_droite | (arbitrage par fonction) | `compute:nom_de_voie` | name / name:left / name:right / source:name | Voir computers.py — priorité BAN, normalisation FANTOIR, gauche/droite conservés seulement s'ils divergent réellement |
 | cpx_numero | (valeur reprise telle quelle) | `ref` | = valeur source |  |
@@ -238,14 +238,14 @@ Réseau hydrographique linéaire. Comme le réseau routier, il est déjà topolo
 | etat_de_l_objet | etat_de_l_objet = Disparu | (entité écartée) |  | Cours d'eau qui n'existe plus sur le terrain (13 entités dans la Vienne). |
 | — | (toujours) | `source` | IGN BD TOPO® 3.5 |  |
 | cleabs | (valeur reprise telle quelle) | `ref:FR:IGN:cleabs` | {cleabs} |  |
-| fosse | fosse = vrai | `waterway` | ditch | branche 1 — exclusif, première correspondance |
+| fosse | fosse = vrai | `waterway` | ditch | branche 1 — exclusif, première correspondance ; motif : Un fossé reste un fossé quelle que soit sa largeur : la nature de l'ouvrage l'emporte sur la classe dimensionnelle. |
 | nature | nature = Canal | `waterway` | canal | branche 2 — exclusif, première correspondance |
 | nature | nature = Aqueduc | `waterway` | canal | branche 3 — exclusif, première correspondance |
 | nature | nature = Aqueduc | `bridge` | aqueduct | branche 3 — exclusif, première correspondance |
-| classe_de_largeur | classe_de_largeur ∈ {Plus de 50 m, Entre 15 et 50 m, Entre 5 et 15 m} | `waterway` | river | branche 4 — exclusif, première correspondance |
+| classe_de_largeur | classe_de_largeur ∈ {Plus de 50 m, Entre 15 et 50 m, Entre 5 et 15 m} | `waterway` | river | branche 4 — exclusif, première correspondance ; motif : `classe_de_largeur` est le seul critère dimensionnel disponible ; le seuil OSM usuel entre `stream` et `river` (≈ 5 m) tombe exactement sur une borne de la nomenclature IGN. |
 | — | (sinon) | `waterway` | stream | branche 5 — exclusif, première correspondance |
-| nature | nature = Conduit buse | `tunnel` | culvert |  |
-| nature | nature = Conduit buse | `layer` | -1 |  |
+| nature | nature = Conduit buse | `tunnel` | culvert | motif : Écoulement busé sous un remblai ou une voirie : `tunnel=culvert`. |
+| nature | nature = Conduit buse | `layer` | -1 | motif : Écoulement busé sous un remblai ou une voirie : `tunnel=culvert`. |
 | position_par_rapport_au_sol | -1 | `tunnel` | culvert |  |
 | position_par_rapport_au_sol | -2 | `tunnel` | culvert |  |
 | position_par_rapport_au_sol | -3 | `tunnel` | culvert |  |
@@ -484,20 +484,20 @@ Bâti BD Topo 3.5 → OSM. La classification `building` croise `nature` (la form
 | nature | nature ∈ {Monument, Arc de triomphe} | `historic` | monument | branche 12 — exclusif, première correspondance |
 | nature | nature = Arène ou théâtre antique | `building` | yes | branche 13 — exclusif, première correspondance |
 | nature | nature = Arène ou théâtre antique | `historic` | amphitheatre | branche 13 — exclusif, première correspondance |
-| nombre_de_logements, usage_1 | usage_1 = Résidentiel et nombre_de_logements = 1 | `building` | house | branche 14 — exclusif, première correspondance |
-| nombre_de_logements, usage_1 | usage_1 = Résidentiel et nombre_de_logements ≥ 2 | `building` | apartments | branche 15 — exclusif, première correspondance |
+| nombre_de_logements, usage_1 | usage_1 = Résidentiel et nombre_de_logements = 1 | `building` | house | branche 14 — exclusif, première correspondance ; motif : 229 978 bâtiments résidentiels à exactement 1 logement dans la Vienne : `nombre_de_logements` étaye solidement la distinction maison / immeuble. |
+| nombre_de_logements, usage_1 | usage_1 = Résidentiel et nombre_de_logements ≥ 2 | `building` | apartments | branche 15 — exclusif, première correspondance ; motif : Plusieurs logements dans un bâtiment résidentiel : immeuble. |
 | usage_1 | usage_1 = Résidentiel | `building` | residential | branche 16 — exclusif, première correspondance |
-| construction_legere, usage_1 | usage_1 = Annexe et construction_legere = vrai | `building` | shed | branche 17 — exclusif, première correspondance |
-| usage_1 | usage_1 = Annexe | `building` | yes | branche 18 — exclusif, première correspondance |
+| construction_legere, usage_1 | usage_1 = Annexe et construction_legere = vrai | `building` | shed | branche 17 — exclusif, première correspondance ; motif : OSM n'a pas de valeur consensuelle pour « annexe » (garages, remises, abris confondus) ; `construction_legere` isole au moins les abris légers. |
+| usage_1 | usage_1 = Annexe | `building` | yes | branche 18 — exclusif, première correspondance ; motif : Annexe sans autre précision : `building=yes` avec l'usage source conservé, plutôt qu'une valeur inventée. |
 | usage_1 | usage_1 = Commercial et services | `building` | commercial | branche 19 — exclusif, première correspondance |
 | usage_1 | usage_1 = Industriel | `building` | industrial | branche 20 — exclusif, première correspondance |
 | usage_1 | usage_1 = Agricole | `building` | farm_auxiliary | branche 21 — exclusif, première correspondance |
 | usage_1 | usage_1 = Religieux | `building` | religious | branche 22 — exclusif, première correspondance |
 | usage_1 | usage_1 = Sportif | `building` | sports_hall | branche 23 — exclusif, première correspondance |
-| nature | nature = Industriel, agricole ou commercial | `building` | yes | branche 24 — exclusif, première correspondance |
+| nature | nature = Industriel, agricole ou commercial | `building` | yes | branche 24 — exclusif, première correspondance ; motif : La nature exclut le résidentiel mais ne tranche pas entre trois fonctions aux valeurs OSM distinctes : en choisir une serait fabriquer de l'information. La nature source est conservée, requalifiable. |
 | — | (sinon) | `building` | yes | branche 25 — exclusif, première correspondance |
-| nature, usage_1 | (nature ∈ {Eglise, Chapelle}) et (usage_1 = Religieux) | `amenity` | place_of_worship |  |
-| nature, usage_1 | (nature ∈ {Eglise, Chapelle}) et (usage_1 = Religieux) | `religion` | christian |  |
+| — | (toujours) | `amenity` | place_of_worship | motif : `nature` donne la forme du bâtiment, `usage_1` atteste l'usage courant : c'est leur conjonction qui justifie `amenity=place_of_worship`, pas la forme seule. all_of: - {nature: [Eglise, Chapelle]} - {usage_1: Religieux} |
+| — | (toujours) | `religion` | christian | motif : `nature` donne la forme du bâtiment, `usage_1` atteste l'usage courant : c'est leur conjonction qui justifie `amenity=place_of_worship`, pas la forme seule. all_of: - {nature: [Eglise, Chapelle]} - {usage_1: Religieux} |
 | hauteur | (valeur reprise telle quelle) | `height` | = valeur source | arrondi à 1 décimale(s) |
 | nombre_d_etages | (valeur reprise telle quelle) | `building:levels` | = valeur source |  |
 | nombre_de_logements | (valeur reprise telle quelle) | `building:flats` | = valeur source | ignoré si valeur ∈ {0} |
@@ -633,10 +633,10 @@ Couverture végétale. Couche volumineuse — 260 779 polygones dans la Vienne, 
 | cleabs | (valeur reprise telle quelle) | `ref:FR:IGN:cleabs` | {cleabs} |  |
 | nature | nature = Vigne | `landuse` | vineyard | branche 1 — exclusif, première correspondance |
 | nature | nature = Verger | `landuse` | orchard | branche 2 — exclusif, première correspondance |
-| nature | nature = Peupleraie | `landuse` | forest | branche 3 — exclusif, première correspondance |
-| nature | nature = Peupleraie | `leaf_type` | broadleaved | branche 3 — exclusif, première correspondance |
+| nature | nature = Peupleraie | `landuse` | forest | branche 3 — exclusif, première correspondance ; motif : Plantation exploitée : `landuse=forest` plutôt que `natural=wood`, qui suggère un boisement spontané. |
+| nature | nature = Peupleraie | `leaf_type` | broadleaved | branche 3 — exclusif, première correspondance ; motif : Plantation exploitée : `landuse=forest` plutôt que `natural=wood`, qui suggère un boisement spontané. |
 | nature | nature = Lande ligneuse | `natural` | scrub | branche 4 — exclusif, première correspondance |
-| nature | nature = Forêt ouverte | `natural` | scrub | branche 5 — exclusif, première correspondance |
+| nature | nature = Forêt ouverte | `natural` | scrub | branche 5 — exclusif, première correspondance ; motif : Couvert discontinu, plus proche du fourré que du bois. |
 | nature | nature = Forêt fermée de feuillus | `natural` | wood | branche 6 — exclusif, première correspondance |
 | nature | nature = Forêt fermée de feuillus | `leaf_type` | broadleaved | branche 6 — exclusif, première correspondance |
 | nature | nature = Forêt fermée de conifères | `natural` | wood | branche 7 — exclusif, première correspondance |
@@ -681,15 +681,15 @@ Surfaces en eau. La couche `plan_d_eau` (1 403 entités) n'est pas convertie : c
 | nature | nature ∈ {Retenue-barrage, Retenue-bassin portuaire} | `water` | reservoir | branche 3 — exclusif, première correspondance |
 | nature | nature = Réservoir-bassin piscicole | `natural` | water | branche 4 — exclusif, première correspondance |
 | nature | nature = Réservoir-bassin piscicole | `water` | fish_pond | branche 4 — exclusif, première correspondance |
-| nature | nature = Réservoir-bassin d'orage | `landuse` | basin | branche 5 — exclusif, première correspondance |
-| nature | nature = Réservoir-bassin d'orage | `basin` | detention | branche 5 — exclusif, première correspondance |
+| nature | nature = Réservoir-bassin d'orage | `landuse` | basin | branche 5 — exclusif, première correspondance ; motif : Bassin technique : `landuse=basin` décrit l'ouvrage, `natural=water` décrirait l'eau — ici c'est l'ouvrage qui est cartographié. |
+| nature | nature = Réservoir-bassin d'orage | `basin` | detention | branche 5 — exclusif, première correspondance ; motif : Bassin technique : `landuse=basin` décrit l'ouvrage, `natural=water` décrirait l'eau — ici c'est l'ouvrage qui est cartographié. |
 | nature | nature = Réservoir-bassin | `landuse` | basin | branche 6 — exclusif, première correspondance |
 | nature | nature = Canal | `natural` | water | branche 7 — exclusif, première correspondance |
 | nature | nature = Canal | `water` | canal | branche 7 — exclusif, première correspondance |
 | nature | nature ∈ {Ecoulement naturel, Ecoulement canalisé, Conduit buse} | `natural` | water | branche 8 — exclusif, première correspondance |
 | nature | nature ∈ {Ecoulement naturel, Ecoulement canalisé, Conduit buse} | `water` | river | branche 8 — exclusif, première correspondance |
-| — | (sinon) | `natural` | water | branche 9 — exclusif, première correspondance |
-| — | (sinon) | `water` | pond | branche 9 — exclusif, première correspondance |
+| — | (sinon) | `natural` | water | branche 9 — exclusif, première correspondance ; motif : « Retenue » (15 876) et « Mare » (7 057) forment l'essentiel du bocage poitevin : petites pièces d'eau, très majoritairement artificielles. |
+| — | (sinon) | `water` | pond | branche 9 — exclusif, première correspondance ; motif : « Retenue » (15 876) et « Mare » (7 057) forment l'essentiel du bocage poitevin : petites pièces d'eau, très majoritairement artificielles. |
 | persistance | Intermittent | `intermittent` | yes |  |
 | cpx_toponyme_de_plan_d_eau | (valeur reprise telle quelle) | `name` | = valeur source |  |
 | nature | (valeur reprise telle quelle) | `bdtopo:nature` | = valeur source |  |
@@ -741,14 +741,14 @@ Lieux habités, en polygones. OSM place plutôt ces objets sur des nœuds, mais 
 | nature | nature = Château | `historic` | castle | branche 4 — exclusif, première correspondance |
 | nature, nature_detaillee | nature = Quartier et nature_detaillee = Quartier urbain | `place` | suburb | branche 5 — exclusif, première correspondance |
 | nature | nature = Quartier | `place` | neighbourhood | branche 6 — exclusif, première correspondance |
-| nature | nature ∈ {Moulin, Grange} | `place` | locality | branche 7 — exclusif, première correspondance |
-| importance | 1 | `place` | town | branche 8 — exclusif, première correspondance |
-| importance | 2 | `place` | village | branche 8 — exclusif, première correspondance |
-| importance | 3 | `place` | village | branche 8 — exclusif, première correspondance |
-| importance | 4 | `place` | hamlet | branche 8 — exclusif, première correspondance |
-| importance | 5 | `place` | isolated_dwelling | branche 8 — exclusif, première correspondance |
-| importance | 6 | `place` | isolated_dwelling | branche 8 — exclusif, première correspondance |
-| importance | (autre valeur) | `place` | locality | branche 8 — exclusif, première correspondance |
+| nature | nature ∈ {Moulin, Grange} | `place` | locality | branche 7 — exclusif, première correspondance ; motif : OSM n'a pas de valeur consensuelle pour ces lieux-dits bâtis, et la source ne dit pas s'il s'agit d'un moulin à vent ou à eau : on reste sur le toponyme, nature conservée. |
+| importance | 1 | `place` | town | branche 8 — exclusif, première correspondance ; motif : « Lieu-dit habité » : `importance` est le seul critère de hiérarchie disponible. Calibration à relire : elle décide de ce qui s'affiche comme village ou comme écart. |
+| importance | 2 | `place` | village | branche 8 — exclusif, première correspondance ; motif : « Lieu-dit habité » : `importance` est le seul critère de hiérarchie disponible. Calibration à relire : elle décide de ce qui s'affiche comme village ou comme écart. |
+| importance | 3 | `place` | village | branche 8 — exclusif, première correspondance ; motif : « Lieu-dit habité » : `importance` est le seul critère de hiérarchie disponible. Calibration à relire : elle décide de ce qui s'affiche comme village ou comme écart. |
+| importance | 4 | `place` | hamlet | branche 8 — exclusif, première correspondance ; motif : « Lieu-dit habité » : `importance` est le seul critère de hiérarchie disponible. Calibration à relire : elle décide de ce qui s'affiche comme village ou comme écart. |
+| importance | 5 | `place` | isolated_dwelling | branche 8 — exclusif, première correspondance ; motif : « Lieu-dit habité » : `importance` est le seul critère de hiérarchie disponible. Calibration à relire : elle décide de ce qui s'affiche comme village ou comme écart. |
+| importance | 6 | `place` | isolated_dwelling | branche 8 — exclusif, première correspondance ; motif : « Lieu-dit habité » : `importance` est le seul critère de hiérarchie disponible. Calibration à relire : elle décide de ce qui s'affiche comme village ou comme écart. |
+| importance | (autre valeur) | `place` | locality | branche 8 — exclusif, première correspondance ; motif : « Lieu-dit habité » : `importance` est le seul critère de hiérarchie disponible. Calibration à relire : elle décide de ce qui s'affiche comme village ou comme écart. |
 | nature | (valeur reprise telle quelle) | `bdtopo:nature` | = valeur source | ignoré si valeur ∈ {Lieu-dit habité} |
 | nature_detaillee | (valeur reprise telle quelle) | `bdtopo:nature_detaillee` | = valeur source |  |
 | fictif | True | `bdtopo:fictif` | yes |  |
@@ -805,8 +805,8 @@ Zones d'activité et d'intérêt — la couche la plus riche en points d'intér�
 | nature | nature = Champ de tir | `landuse` | military | branche 16 — exclusif, première correspondance |
 | nature | nature = Champ de tir | `military` | range | branche 16 — exclusif, première correspondance |
 | nature | nature ∈ {Préfecture, Sous-préfecture, Hôtel de région, Hôtel de département, Administration centrale de l'Etat, Autre service déconcentré de l'Etat, Siège d'EPCI, Divers public ou administratif} | `office` | government | branche 17 — exclusif, première correspondance |
-| nature | nature = Aire d'accueil des gens du voyage | `tourism` | caravan_site | branche 18 — exclusif, première correspondance |
-| nature | nature = Aire d'accueil des gens du voyage | `permanent` | yes | branche 18 — exclusif, première correspondance |
+| nature | nature = Aire d'accueil des gens du voyage | `tourism` | caravan_site | branche 18 — exclusif, première correspondance ; motif : `caravan_site` est l'usage OSM français pour ces aires, malgré l'ambiguïté du terme touristique. |
+| nature | nature = Aire d'accueil des gens du voyage | `permanent` | yes | branche 18 — exclusif, première correspondance ; motif : `caravan_site` est l'usage OSM français pour ces aires, malgré l'ambiguïté du terme touristique. |
 | nature | nature ∈ {Enseignement primaire, Collège, Lycée, Autre établissement d'enseignement} | `amenity` | school | branche 19 — exclusif, première correspondance |
 | nature | nature ∈ {Université, Enseignement supérieur} | `amenity` | university | branche 20 — exclusif, première correspondance |
 | nature | nature = Science | `amenity` | research_institute | branche 21 — exclusif, première correspondance |
@@ -863,10 +863,10 @@ Zones d'activité et d'intérêt — la couche la plus riche en points d'intér�
 | nature | nature = Mégalithe | `site_type` | megalith | branche 56 — exclusif, première correspondance |
 | nature | nature = Vestige archéologique | `historic` | archaeological_site | branche 57 — exclusif, première correspondance |
 | nature | nature = Centre de documentation | `amenity` | library | branche 58 — exclusif, première correspondance |
-| nature | nature ∈ {Salle de spectacle ou conférence, Salle de danse ou de jeux} | `amenity` | community_centre | branche 59 — exclusif, première correspondance |
+| nature | nature ∈ {Salle de spectacle ou conférence, Salle de danse ou de jeux} | `amenity` | community_centre | branche 59 — exclusif, première correspondance ; motif : En milieu rural ces salles sont le plus souvent des salles des fêtes : `community_centre` plutôt que `theatre`. |
 | nature | nature = Parc des expositions | `amenity` | exhibition_centre | branche 60 — exclusif, première correspondance |
 | nature | nature ∈ {Espace public, Aire de détente, Parc de loisirs} | `leisure` | park | branche 61 — exclusif, première correspondance |
-| — | (sinon) | `fixme` | Nature BD TOPO sans équivalent OSM établi — à qualifier | branche 62 — exclusif, première correspondance |
+| — | (sinon) | `fixme` | Nature BD TOPO sans équivalent OSM établi — à qualifier | branche 62 — exclusif, première correspondance ; motif : Nature sans correspondance OSM assumée : `fixme` est un vrai tag, lu par les éditeurs et les outils de contrôle — préférable à un `tourism=attraction` posé au jugé. |
 | categorie | (valeur reprise telle quelle) | `bdtopo:categorie` | = valeur source |  |
 | nature | (valeur reprise telle quelle) | `bdtopo:nature` | = valeur source |  |
 | nature_detaillee | (valeur reprise telle quelle) | `bdtopo:nature_detaillee` | = valeur source |  |
@@ -917,8 +917,8 @@ Zones d'activité et d'intérêt — la couche la plus riche en points d'intér�
 | nature, nature_detaillee | nature = Parking et nature_detaillee = Aire de camping-cars | `tourism` | caravan_site | branche 5 — exclusif, première correspondance |
 | nature | nature = Parking | `amenity` | parking | branche 6 — exclusif, première correspondance |
 | nature | nature = Parking | `parking` | surface | branche 6 — exclusif, première correspondance |
-| nature | nature = Service dédié aux véhicules | `amenity` | charging_station | branche 7 — exclusif, première correspondance |
-| nature | nature = Service dédié aux véhicules | `motorcar` | yes | branche 7 — exclusif, première correspondance |
+| nature | nature = Service dédié aux véhicules | `amenity` | charging_station | branche 7 — exclusif, première correspondance ; motif : 739 entités, toutes « Borne de rechargement électrique » d'après `nature_detaillee` ; la source Etalab (opérateurs IRVE) le confirme. |
+| nature | nature = Service dédié aux véhicules | `motorcar` | yes | branche 7 — exclusif, première correspondance ; motif : 739 entités, toutes « Borne de rechargement électrique » d'après `nature_detaillee` ; la source Etalab (opérateurs IRVE) le confirme. |
 | nature, nature_detaillee | nature = Aire de repos ou de service et nature_detaillee = Aire de service | `highway` | services | branche 8 — exclusif, première correspondance |
 | nature | nature = Aire de repos ou de service | `highway` | rest_area | branche 9 — exclusif, première correspondance |
 | nature | nature = Péage | `barrier` | toll_booth | branche 10 — exclusif, première correspondance |
@@ -1029,8 +1029,8 @@ Réservoirs et châteaux d'eau, en emprise. 831 entités dans la Vienne.
 |---|---|---|---|---|
 | — | (toujours) | `source` | IGN BD TOPO® 3.5 |  |
 | cleabs | (valeur reprise telle quelle) | `ref:FR:IGN:cleabs` | {cleabs} |  |
-| nature | nature = Château d'eau | `man_made` | water_tower | branche 1 — exclusif, première correspondance |
-| nature | nature = Château d'eau | `building` | yes | branche 1 — exclusif, première correspondance |
+| nature | nature = Château d'eau | `man_made` | water_tower | branche 1 — exclusif, première correspondance ; motif : Réservoir surélevé : `man_made=water_tower` ; c'est aussi un bâtiment. |
+| nature | nature = Château d'eau | `building` | yes | branche 1 — exclusif, première correspondance ; motif : Réservoir surélevé : `man_made=water_tower` ; c'est aussi un bâtiment. |
 | nature | nature = Réservoir d'eau ou château d'eau au sol | `man_made` | storage_tank | branche 2 — exclusif, première correspondance |
 | nature | nature = Réservoir d'eau ou château d'eau au sol | `content` | water | branche 2 — exclusif, première correspondance |
 | nature | nature = Réservoir industriel | `man_made` | storage_tank | branche 3 — exclusif, première correspondance |
@@ -1305,7 +1305,7 @@ Toponymes de lieux non habités, en points. Mesures sur le département 86, 14 6
 | cleabs | (valeur reprise telle quelle) | `ref:FR:IGN:cleabs` | {cleabs} |  |
 | toponyme | (valeur reprise telle quelle) | `name` | = valeur source |  |
 | nature | nature = Arbre | `natural` | tree | branche 1 — exclusif, première correspondance |
-| — | (sinon) | `place` | locality | branche 2 — exclusif, première correspondance |
+| — | (sinon) | `place` | locality | branche 2 — exclusif, première correspondance ; motif : Un bois nommé reste un toponyme : son emprise, quand elle existe, est portée par `zone_de_vegetation`. `natural=wood` sur un point dupliquerait l'information. |
 | nature | (valeur reprise telle quelle) | `bdtopo:nature` | = valeur source | ignoré si valeur ∈ {Lieu-dit non habité} |
 | date_creation |  | (non converti) |  | Métadonnée de production IGN, sans équivalent OSM. ; métadonnée commune |
 | date_modification |  | (non converti) |  | Idem. ; métadonnée commune |

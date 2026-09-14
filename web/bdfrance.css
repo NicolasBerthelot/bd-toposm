@@ -93,3 +93,21 @@ body {
 .bdf-footer a {
   color: #000091;
 }
+
+/* ----------------------------------------------------- explication des tags */
+
+.ideditor .bdf-why {
+  margin-bottom: 6px;
+}
+.ideditor .bdf-why strong {
+  color: #000091;
+}
+.ideditor .bdf-why-motif {
+  margin-top: 4px;
+  color: #3a3a3a;
+  font-style: italic;
+}
+.ideditor .bdf-why-osm {
+  margin-top: 6px;
+  color: #666;
+}

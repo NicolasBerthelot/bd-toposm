@@ -119,6 +119,18 @@ CREATE TABLE IF NOT EXISTS meta (
     value TEXT
 );
 
+-- Provenance : les attributs BD Topo consultés par les règles pour cet
+-- objet, en JSON compressé. C'est ce qui permet de répondre, après coup,
+-- « pourquoi ce tag a-t-il cette valeur ? » en rejouant les règles en mode
+-- explication (mapping.RuleSet.explain).
+CREATE TABLE IF NOT EXISTS provenance (
+    element_type TEXT    NOT NULL,
+    element_id   INTEGER NOT NULL,
+    layer        TEXT    NOT NULL,
+    data         BLOB    NOT NULL,
+    PRIMARY KEY (element_type, element_id)
+) WITHOUT ROWID;
+
 CREATE TABLE IF NOT EXISTS changesets (
     id          INTEGER PRIMARY KEY,
     user_id     INTEGER NOT NULL,
@@ -257,6 +269,13 @@ def load(con: sqlite3.Connection, builder: OsmBuilder, *, source_label: str = ""
         "INSERT OR REPLACE INTO idmap (cleabs, element_type, element_id) VALUES (?, ?, ?)",
         _idmap_rows(builder),
     )
+    con.executemany(
+        "INSERT OR REPLACE INTO provenance (element_type, element_id, layer, data) VALUES (?, ?, ?, ?)",
+        (
+            (kind, element_id, layer, pack_provenance(attrs))
+            for (kind, element_id), (layer, attrs) in getattr(builder, "provenance", {}).items()
+        ),
+    )
 
     con.executemany(
         "INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)",
@@ -301,6 +320,28 @@ def _idmap_rows(builder: OsmBuilder) -> Iterator[tuple[str, str, int]]:
         cleabs = node.tags.get(CLEABS_TAG)
         if cleabs:
             yield (cleabs, "node", node.id)
+
+
+def pack_provenance(attributes: dict) -> bytes:
+    import json
+    import zlib
+
+    return zlib.compress(json.dumps(attributes, ensure_ascii=False, separators=(",", ":")).encode("utf-8"), 6)
+
+
+def unpack_provenance(blob: bytes) -> dict:
+    import json
+    import zlib
+
+    return json.loads(zlib.decompress(blob).decode("utf-8"))
+
+
+def provenance(con: sqlite3.Connection, kind: str, element_id: int) -> tuple[str, dict] | None:
+    row = con.execute(
+        "SELECT layer, data FROM provenance WHERE element_type = ? AND element_id = ?",
+        (kind, element_id),
+    ).fetchone()
+    return None if row is None else (row["layer"], unpack_provenance(row["data"]))
 
 
 def counts(con: sqlite3.Connection) -> dict[str, int]:
@@ -591,12 +632,7 @@ def query_map(
     """
     min_lon, min_lat, max_lon, max_lat = bbox
 
-    con.executescript(
-        "CREATE TEMP TABLE IF NOT EXISTS sel_nodes (id INTEGER PRIMARY KEY);"
-        "CREATE TEMP TABLE IF NOT EXISTS sel_ways (id INTEGER PRIMARY KEY);"
-        "CREATE TEMP TABLE IF NOT EXISTS sel_relations (id INTEGER PRIMARY KEY);"
-        "DELETE FROM sel_nodes; DELETE FROM sel_ways; DELETE FROM sel_relations;"
-    )
+    _reset_selection(con)
 
     # 1. nœuds de l'emprise
     con.execute(
@@ -627,6 +663,65 @@ def query_map(
         ways=_fetch_ways(con),
         relations=_fetch_relations(con),
     )
+
+
+def _reset_selection(con: sqlite3.Connection) -> None:
+    con.executescript(
+        "CREATE TEMP TABLE IF NOT EXISTS sel_nodes (id INTEGER PRIMARY KEY);"
+        "CREATE TEMP TABLE IF NOT EXISTS sel_ways (id INTEGER PRIMARY KEY);"
+        "CREATE TEMP TABLE IF NOT EXISTS sel_relations (id INTEGER PRIMARY KEY);"
+        "DELETE FROM sel_nodes; DELETE FROM sel_ways; DELETE FROM sel_relations;"
+    )
+
+
+def query_elements(
+    con: sqlite3.Connection, kind: str, ids: list[int], full: bool = False
+) -> MapResult:
+    """Lecture unitaire ou multiple, avec ou sans dépendances (`/full`).
+
+    `full` : un way vient avec ses nœuds ; une relation avec ses membres et,
+    pour les ways membres, leurs nœuds — ce qu'iD attend de `/full.json`.
+    """
+    _reset_selection(con)
+    table = {"node": "sel_nodes", "way": "sel_ways", "relation": "sel_relations"}[kind]
+    con.executemany(f"INSERT OR IGNORE INTO {table} (id) VALUES (?)", [(i,) for i in ids])
+
+    if full and kind == "relation":
+        con.execute(
+            "INSERT OR IGNORE INTO sel_ways (id) SELECT member_id FROM relation_members "
+            "WHERE member_type = 'way' AND relation_id IN (SELECT id FROM sel_relations)"
+        )
+        con.execute(
+            "INSERT OR IGNORE INTO sel_nodes (id) SELECT member_id FROM relation_members "
+            "WHERE member_type = 'node' AND relation_id IN (SELECT id FROM sel_relations)"
+        )
+    if full and kind in ("way", "relation"):
+        con.execute(
+            "INSERT OR IGNORE INTO sel_nodes (id) SELECT DISTINCT node_id FROM way_nodes "
+            "WHERE way_id IN (SELECT id FROM sel_ways)"
+        )
+    return MapResult(nodes=_fetch_nodes(con), ways=_fetch_ways(con), relations=_fetch_relations(con))
+
+
+def query_relations_of(con: sqlite3.Connection, kind: str, element_id: int) -> MapResult:
+    """Relations dont l'élément est membre (`/{type}/{id}/relations`)."""
+    _reset_selection(con)
+    con.execute(
+        "INSERT OR IGNORE INTO sel_relations (id) SELECT DISTINCT relation_id FROM relation_members "
+        "WHERE member_type = ? AND member_id = ?",
+        (kind, element_id),
+    )
+    return MapResult(nodes=[], ways=[], relations=_fetch_relations(con))
+
+
+def query_ways_of_node(con: sqlite3.Connection, node_id: int) -> MapResult:
+    """Ways passant par ce nœud (`/node/{id}/ways`)."""
+    _reset_selection(con)
+    con.execute(
+        "INSERT OR IGNORE INTO sel_ways (id) SELECT DISTINCT way_id FROM way_nodes WHERE node_id = ?",
+        (node_id,),
+    )
+    return MapResult(nodes=[], ways=_fetch_ways(con), relations=[])
 
 
 def _tags_for(con: sqlite3.Connection, table: str, column: str, selection: str) -> dict:

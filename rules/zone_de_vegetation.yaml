@@ -33,6 +33,8 @@ rules:
       # Peupleraie : plantation exploitée, donc `landuse=forest` plutôt que
       # `natural=wood` qui suggère un boisement spontané.
       - when: {nature: Peupleraie}
+        motif: >-
+          Plantation exploitée : `landuse=forest` plutôt que `natural=wood`, qui suggère un boisement spontané.
         set: {landuse: forest, leaf_type: broadleaved}
 
       - when: {nature: Lande ligneuse}
@@ -40,6 +42,8 @@ rules:
 
       # Forêt ouverte : couvert discontinu, plus proche du fourré que du bois.
       - when: {nature: Forêt ouverte}
+        motif: >-
+          Couvert discontinu, plus proche du fourré que du bois.
         set: {natural: scrub}
 
       - when: {nature: Forêt fermée de feuillus}

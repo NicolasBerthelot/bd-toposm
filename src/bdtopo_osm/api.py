@@ -42,7 +42,7 @@ from fastapi.responses import (
 )
 from fastapi.staticfiles import StaticFiles
 
-from . import auth, edit, store
+from . import auth, computers, edit, store  # noqa: F401  (computers : fonctions compute:)
 from .osmxml import GENERATOR, sanitize
 
 # Limite d'emprise de l'API OSM, en degrés carrés. iD la lit dans les
@@ -60,6 +60,7 @@ MAX_CHANGESET_ELEMENTS = 10000
 CHUNK_SIZE = 256 * 1024
 
 WEB_DIR = Path(__file__).resolve().parents[2] / "web"
+RULES_DIR = Path(__file__).resolve().parents[2] / "rules"
 
 
 def _chunked(pieces: Iterator[str], size: int = CHUNK_SIZE) -> Iterator[str]:
@@ -608,6 +609,129 @@ def create_app(
         finally:
             con.close()
         return PlainTextResponse("")
+
+    # ---------------------------------------------------- lecture unitaire
+    # iD n'utilise pas que les tuiles : un lien profond (`&id=w123`), un
+    # « zoomer sur », ou la vérification après enregistrement passent par
+    # /{type}/{id}[/full].json, /{type}/{id}/relations.json, /node/{id}/ways.json
+    # et le multi-fetch /{type}s.json?{type}s=1,2,3. Sans eux, 404 silencieux.
+    # Seules les variantes .json existent : une route sans extension happerait
+    # « 1.json » comme identifiant, et iD n'appelle que le JSON.
+
+    def _json_result(result: store.MapResult):
+        return StreamingResponse(_chunked(_map_json(result)), media_type="application/json")
+
+    def _kind(name: str) -> str:
+        if name not in ("node", "way", "relation"):
+            raise HTTPException(404)
+        return name
+
+    @app.get("/api/0.6/{kind}/{element_id}.json")
+    def element(kind: str, element_id: int):
+        con = connection()
+        try:
+            result = store.query_elements(con, _kind(kind), [element_id])
+        finally:
+            con.close()
+        if not (result.nodes or result.ways or result.relations):
+            raise HTTPException(404)
+        return _json_result(result)
+
+    @app.get("/api/0.6/{kind}/{element_id}/full.json")
+    def element_full(kind: str, element_id: int):
+        k = _kind(kind)
+        if k == "node":
+            raise HTTPException(404)
+        con = connection()
+        try:
+            result = store.query_elements(con, k, [element_id], full=True)
+        finally:
+            con.close()
+        if not (result.ways or result.relations):
+            raise HTTPException(404)
+        return _json_result(result)
+
+    @app.get("/api/0.6/{kind}/{element_id}/relations.json")
+    def element_relations(kind: str, element_id: int):
+        con = connection()
+        try:
+            return _json_result(store.query_relations_of(con, _kind(kind), element_id))
+        finally:
+            con.close()
+
+    @app.get("/api/0.6/node/{element_id}/ways.json")
+    def node_ways(element_id: int):
+        con = connection()
+        try:
+            return _json_result(store.query_ways_of_node(con, element_id))
+        finally:
+            con.close()
+
+    @app.get("/api/0.6/{kinds}.json")
+    def elements_multi(kinds: str, request: Request):
+        # /nodes?nodes=1,2  /ways?ways=…  /relations?relations=…
+        k = {"nodes": "node", "ways": "way", "relations": "relation"}.get(kinds)
+        if k is None:
+            raise HTTPException(404)
+        raw = request.query_params.get(kinds, "")
+        try:
+            ids = [int(v.split("v")[0]) for v in raw.split(",") if v.strip()]
+        except ValueError:
+            raise HTTPException(400, "identifiants invalides")
+        if not ids:
+            raise HTTPException(400, f"paramètre {kinds} attendu")
+        con = connection()
+        try:
+            return _json_result(store.query_elements(con, k, ids))
+        finally:
+            con.close()
+
+    # ------------------------------------------------------------ explication
+
+    _rulesets: dict[str, object] = {}
+
+    def _ruleset(layer: str):
+        if layer not in _rulesets:
+            from .mapping import RuleSet
+
+            _rulesets[layer] = RuleSet.load(RULES_DIR / f"{layer}.yaml")
+        return _rulesets[layer]
+
+    @app.get("/api/bdfrance/explain/{kind}/{element_id}")
+    def explain(kind: str, element_id: int) -> dict:
+        """Pourquoi cet objet porte-t-il ses tags ?
+
+        Rejoue les règles de sa couche sur les attributs BD Topo conservés à la
+        conversion (table `provenance`), en mode explication : pour chaque tag,
+        la règle, sa condition, les attributs lus et le motif rédigé.
+        """
+        if kind not in ("node", "way", "relation"):
+            raise HTTPException(404)
+        con = connection()
+        try:
+            found = store.provenance(con, kind, element_id)
+        finally:
+            con.close()
+        if found is None:
+            raise HTTPException(404, "pas de provenance pour cet élément (créé dans l'éditeur ?)")
+        layer, attributes = found
+        rules = _ruleset(layer)
+        explanations = rules.explain(attributes)
+        return {
+            "layer": layer,
+            "attributes": attributes,
+            "tags": {
+                key: {
+                    "value": e.value,
+                    "mode": e.mode,
+                    "branch": e.branch,
+                    "condition": e.condition,
+                    "motif": e.motif,
+                    "fields": e.fields,
+                }
+                for key, e in explanations.items()
+            },
+        }
 
     # ----------------------------------------------------------- diagnostic
 

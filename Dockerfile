@@ -15,6 +15,7 @@ RUN apt-get update \
 # défaut, qui pointe vers openstreetmap.org.
 COPY pyproject.toml README.md ./
 COPY src ./src
+COPY rules ./rules
 COPY web/index.html ./web/index.html
 RUN pip install --no-cache-dir -e ".[serve]"
 

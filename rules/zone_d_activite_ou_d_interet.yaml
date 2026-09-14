@@ -68,6 +68,8 @@ rules:
       # Aire d'accueil des gens du voyage : `caravan_site` est l'usage OSM
       # français pour ces aires, malgré l'ambiguïté du terme touristique.
       - when: {nature: Aire d'accueil des gens du voyage}
+        motif: >-
+          `caravan_site` est l'usage OSM français pour ces aires, malgré l'ambiguïté du terme touristique.
         set: {tourism: caravan_site, permanent: "yes"}
 
       # ----------------------------------------------- science et enseignement
@@ -161,6 +163,8 @@ rules:
       - when: {nature: Centre de documentation}
         set: {amenity: library}
       - when: {nature: [Salle de spectacle ou conférence, Salle de danse ou de jeux]}
+        motif: >-
+          En milieu rural ces salles sont le plus souvent des salles des fêtes : `community_centre` plutôt que `theatre`.
         set: {amenity: community_centre}
       - when: {nature: Parc des expositions}
         set: {amenity: exhibition_centre}
@@ -172,6 +176,8 @@ rules:
       # lisible par les éditeurs et les outils de contrôle — bien préférable à
       # un `tourism=attraction` posé au jugé.
       - when: {}
+        motif: >-
+          Nature sans correspondance OSM assumée : `fixme` est un vrai tag, lu par les éditeurs et les outils de contrôle — préférable à un `tourism=attraction` posé au jugé.
         set:
           fixme: "Nature BD TOPO sans équivalent OSM établi — à qualifier"
 

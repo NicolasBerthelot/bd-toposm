@@ -39,6 +39,8 @@ rules:
       # ces lieux-dits bâtis, et la source ne dit pas s'il s'agit d'un moulin à
       # vent ou à eau. On reste sur le toponyme et on conserve la nature.
       - when: {nature: [Moulin, Grange]}
+        motif: >-
+          OSM n'a pas de valeur consensuelle pour ces lieux-dits bâtis, et la source ne dit pas s'il s'agit d'un moulin à vent ou à eau : on reste sur le toponyme, nature conservée.
         set: {place: locality}
 
       # « Lieu-dit habité » : 22 061 des 23 853 zones. `importance` est le seul
@@ -48,6 +50,8 @@ rules:
       # comme village ou comme simple écart, et le bocage poitevin compte
       # énormément de hameaux minuscules.
       - when: {}
+        motif: >-
+          « Lieu-dit habité » : `importance` est le seul critère de hiérarchie disponible. Calibration à relire : elle décide de ce qui s'affiche comme village ou comme écart.
         set:
           place:
             from: importance

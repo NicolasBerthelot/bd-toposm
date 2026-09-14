@@ -474,3 +474,42 @@ def test_bon_mot_de_passe_delivre_un_code_puis_un_jeton(client_demo):
 def test_sans_mot_de_passe_le_formulaire_n_existe_pas(client):
     r = client.post("/oauth2/authorize", data={**AUTHZ, "password": "x"}, follow_redirects=False)
     assert r.status_code == 404
+
+
+# ------------------------------------------------------------ explication
+
+
+def test_explain_rejoue_les_regles_sur_la_provenance(tmp_path):
+    """Chaque tag d'un objet converti doit pouvoir dire d'où il vient."""
+    from bdtopo_osm.pipeline import _emit, _plain_attributes
+    from bdtopo_osm.mapping import RuleSet
+    from bdtopo_osm.pipeline import RULES_DIR
+
+    rules = RuleSet.load(RULES_DIR / "troncon_de_route.yaml")
+    feature = {"cleabs": "TRONROUT42", "nature": "Route empierrée", "importance": "5",
+               "sens_de_circulation": "Double sens", "nombre_de_voies": 1.0, "urbain": False,
+               "etat_de_l_objet": "En service", "fictif": False, "position_par_rapport_au_sol": "0"}
+    tags = rules.apply(feature)
+    builder = MemoryBuilder()
+    created = _emit(builder, LineString([(0.1, 0.1), (0.2, 0.2)]), tags)
+    used = sorted(rules.referenced_fields() & set(feature))
+    for kind, eid in created:
+        builder.record_provenance(kind, eid, "troncon_de_route", _plain_attributes(feature, used))
+
+    path = tmp_path / "prov.db"
+    con = store.connect(path); store.load(con, builder); con.close()
+
+    client = TestClient(create_app(path, readonly=True))
+    r = client.get(f"/api/bdfrance/explain/way/{created[0][1]}")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["layer"] == "troncon_de_route"
+    hw = body["tags"]["highway"]
+    assert hw["value"] == "unclassified"
+    assert hw["fields"] == {"nature": "Route empierrée"}
+    assert "Route empierrée" in hw["condition"]
+    assert "unclassified" in hw["motif"]          # le motif rédigé est restitué
+    assert body["tags"]["surface"]["value"] == "unpaved"
+    assert body["tags"]["lanes"]["fields"] == {"nombre_de_voies": 1.0}
+
+    assert client.get("/api/bdfrance/explain/way/999999").status_code == 404

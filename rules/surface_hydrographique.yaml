@@ -31,6 +31,8 @@ rules:
       # Bassins techniques : `landuse=basin` décrit l'ouvrage, `natural=water`
       # décrirait l'eau — ici c'est bien l'ouvrage qui est cartographié.
       - when: {nature: Réservoir-bassin d'orage}
+        motif: >-
+          Bassin technique : `landuse=basin` décrit l'ouvrage, `natural=water` décrirait l'eau — ici c'est l'ouvrage qui est cartographié.
         set: {landuse: basin, basin: detention}
 
       - when: {nature: Réservoir-bassin}
@@ -46,6 +48,8 @@ rules:
       # « Retenue » (15 876) et « Mare » (7 057) sont l'essentiel du bocage
       # poitevin : petites pièces d'eau, très majoritairement artificielles.
       - when: {}
+        motif: >-
+          « Retenue » (15 876) et « Mare » (7 057) forment l'essentiel du bocage poitevin : petites pièces d'eau, très majoritairement artificielles.
         set: {natural: water, water: pond}
 
   - set:

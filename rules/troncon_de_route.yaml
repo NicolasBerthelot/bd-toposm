@@ -32,6 +32,8 @@ rules:
       # 1. Aménagements cyclables propres : la restriction décrit ce qu'EST la
       #    voie, pas une contrainte qui s'y ajoute (848 entités).
       - when: {nature_de_la_restriction: [Piste cyclable, Voie verte]}
+        motif: >-
+          La restriction décrit ce qu'EST la voie — un aménagement cyclable propre — pas une contrainte qui s'y ajoute. Elle prime donc sur la nature.
         set: {highway: cycleway}
 
       - when: {etat_de_l_objet: En construction}
@@ -48,6 +50,8 @@ rules:
         set: {route: ferry, motor_vehicle: yes}
 
       - when: {nature: Chemin}
+        motif: >-
+          « Chemin » BD Topo : prévu pour les véhicules ou engins d'exploitation, pas forcément carrossable par tous les temps — c'est la définition d'un `track`.
         set: {highway: track, surface: unpaved}
 
       # 3. Route empierrée : carrossable et publique (13 privées sur 56 369,
@@ -55,6 +59,8 @@ rules:
       #    sous-entendrait un usage agricole ou forestier non établi par la
       #    source. Le revêtement est porté par `surface`, qui reste requalifiable.
       - when: {nature: Route empierrée}
+        motif: >-
+          Carrossable et publique selon la source (13 privées sur 56 369 dans la Vienne, 54 502 en accès libre) : donc `unclassified`, pas `track`, qui sous-entendrait un usage agricole non établi. Le revêtement est porté par `surface`, requalifiable.
         set: {highway: unclassified, surface: unpaved}
 
       # 4. Bretelles : la BD Topo ne dit pas à quelle route la bretelle se
@@ -62,6 +68,8 @@ rules:
       #    à remplacer par une propagation depuis les tronçons connectés une fois
       #    le graphe topologique construit (phase 3).
       - when: {nature: Bretelle}
+        motif: >-
+          La BD Topo ne dit pas quelle route la bretelle raccorde ; la classe est déduite de `importance`. IGN affecte à une bretelle « l'importance la moins importante des deux tronçons qu'elle joint ». Approximation à remplacer par une propagation depuis les tronçons connectés.
         set:
           highway:
             from: importance
@@ -71,6 +79,8 @@ rules:
       # 5. Ronds-points : `junction=roundabout` est une forme, pas une classe.
       #    Même remarque que pour les bretelles sur la propagation.
       - when: {nature: Rond-point}
+        motif: >-
+          `junction=roundabout` est une forme, pas une classe : la classe vient de `importance`, à défaut de connaître la route la plus importante qui aboutit à l'anneau.
         set:
           junction: roundabout
           oneway: "yes"
@@ -81,6 +91,8 @@ rules:
 
       # 6. Classement administratif : fait autorité quand il est renseigné.
       - when: {cpx_classement_administratif: {contains: Autoroute}}
+        motif: >-
+          Le classement administratif fait autorité quand il est renseigné (15,7 % des tronçons de la Vienne).
         set: {highway: motorway}
 
       - when:
@@ -93,6 +105,8 @@ rules:
         set: {highway: primary}
 
       - when: {cpx_classement_administratif: {contains: Départementale}}
+        motif: >-
+          Départementale : la classe suit `importance`, qu'IGN définit comme une hiérarchisation fonctionnelle du réseau (non administrative). Mesuré : importance 4 = 29 790 D sur 34 022 tronçons.
         set:
           highway:
             from: importance
@@ -103,6 +117,8 @@ rules:
       #    `Type autoroutier` sans classement Autoroute : le préfixe du numéro
       #    tranche (A10 → motorway ; N147 en voie express → trunk).
       - when: {nature: Type autoroutier, cpx_numero: {matches: "^[Aa]"}}
+        motif: >-
+          Type autoroutier sans classement Autoroute : le préfixe du numéro tranche (A10 → motorway ; N147 en voie express → trunk).
         set: {highway: motorway}
 
       - when: {nature: Type autoroutier}
@@ -119,9 +135,13 @@ rules:
       # `urbain` sépare la voirie de lotissement (residential) de la voie
       # communale rase-campagne (unclassified).
       - when: {nature: Route à 1 chaussée, importance: 5, urbain: true}
+        motif: >-
+          Importance 5 = desserte locale (129 135 tronçons, le gros du réseau). `urbain` sépare la voirie de lotissement (`residential`) de la voie communale rase-campagne (`unclassified`).
         set: {highway: residential}
 
       - when: {nature: Route à 1 chaussée}
+        motif: >-
+          Repli nature × importance pour les 84,3 % de tronçons sans classement administratif.
         set:
           highway:
             from: importance

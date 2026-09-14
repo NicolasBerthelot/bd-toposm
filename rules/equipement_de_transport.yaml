@@ -43,6 +43,8 @@ rules:
       # 739 entités, toutes « Borne de rechargement électrique » d'après
       # `nature_detaillee` ; la source Etalab (opérateurs IRVE) le confirme.
       - when: {nature: Service dédié aux véhicules}
+        motif: >-
+          739 entités, toutes « Borne de rechargement électrique » d'après `nature_detaillee` ; la source Etalab (opérateurs IRVE) le confirme.
         set: {amenity: charging_station, motorcar: "yes"}
 
       - when: {nature: Aire de repos ou de service, nature_detaillee: Aire de service}

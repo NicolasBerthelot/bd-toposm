@@ -159,10 +159,40 @@ le champ reste vide plutôt que d'être rempli par la première définition
 d'attribut rencontrée — c'est un piège de la structure HTML, et `bdtopo-extract`
 y est tombé dans `_fetch_description`.
 
+### Pourquoi ce tag ? — l'explication de chaque valeur
+
+Le bouton ⓘ d'une clé OSM (`highway`, `building`, `building:material`…) sur un
+objet issu de la BD Topo affiche d'abord **d'où vient la valeur** :
+
+```
+Déduit de la BD TOPO® : nature = « Route empierrée »
+Règle : nature = Route empierrée (branche 7, classification exclusive)
+Motif : Carrossable et publique selon la source (13 privées sur 56 369…) : donc
+        unclassified, pas track, qui sous-entendrait un usage agricole non établi.
+Référence OSM : (la documentation habituelle du wiki)
+```
+
+Trois mécanismes :
+
+- `RuleSet.explain()` rejoue les règles en gardant, pour chaque tag, la règle
+  qui l'a écrit, sa condition, les attributs lus et le `motif:` rédigé dans le
+  YAML — ce champ, ajouté sur 31 règles dont la justification n'est pas
+  évidente, est aussi exporté dans la table de correspondance.
+- La table `provenance` conserve, par objet, les attributs BD Topo consultés
+  par les règles (JSON compressé, ~240 octets par objet : 12 Mo pour Poitiers).
+- `/api/bdfrance/explain/{type}/{id}` combine les deux ; la page d'iD l'appelle
+  au clic et antépose l'explication à la référence OSM.
+
+Un objet créé dans l'éditeur n'a pas de provenance : le panneau retombe sur la
+référence OSM seule.
+
 ## Le serveur API 0.6
 
-Endpoints implémentés : `/api/capabilities`, `/api/0.6/capabilities`,
-`/api/versions`, `/api/0.6/map?bbox=`, plus `/status` pour le diagnostic.
+Endpoints implémentés : `/api/capabilities[.json]`, `/api/versions`,
+`/api/0.6/map[.json]?bbox=`, la lecture unitaire `/api/0.6/{type}/{id}.json`,
+`…/full.json`, `…/relations.json`, `/node/{id}/ways.json` et le multi-fetch
+`/api/0.6/{type}s.json?{type}s=…` (iD s'en sert pour les liens profonds et
+après enregistrement), plus `/healthz` et `/status`.
 Les capabilities annoncent `api="readonly"`, ce qu'iD comprend nativement et qui
 lui fait masquer les outils d'édition plutôt que d'échouer à l'enregistrement.
 

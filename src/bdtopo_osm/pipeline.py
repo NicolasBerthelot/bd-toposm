@@ -97,6 +97,9 @@ def convert(
         if len(gdf):
             main_key = ruleset.report_key
             shared_points = ruleset.point_mode == "shared"
+            # Champs consultés par les règles : c'est la provenance conservée
+            # par objet, pour pouvoir expliquer chaque tag après coup.
+            used_fields = sorted(ruleset.referenced_fields() & set(gdf.columns))
             attributes = gdf.drop(columns=gdf.geometry.name)
             geometries = gdf.geometry.to_numpy()
             started = time.time()
@@ -113,7 +116,11 @@ def convert(
                     if not tags:
                         report.untagged += 1
                         continue
-                    _emit(builder, geometries[chunk_start + offset], tags, shared_points)
+                    created = _emit(builder, geometries[chunk_start + offset], tags, shared_points)
+                    if created:
+                        source_attrs = _plain_attributes(feature, used_fields)
+                        for kind, element_id in created:
+                            builder.record_provenance(kind, element_id, layer_name, source_attrs)
                     report.converted += 1
                     if main_key:
                         report.main_key_values[tags.get(main_key, "(aucun)")] += 1
@@ -156,16 +163,32 @@ def convert(
     return builder, reports, written
 
 
-def _emit(builder: OsmBuilder, geom, tags: dict[str, str], shared_points: bool = False) -> None:
+def _emit(
+    builder: OsmBuilder, geom, tags: dict[str, str], shared_points: bool = False
+) -> list[tuple[str, int]]:
+    """Émet la géométrie et renvoie les éléments *porteurs de tags* créés."""
     kind = geom.geom_type if geom is not None else None
     if kind in ("Point", "MultiPoint"):
-        builder.add_point(geom, tags, shared=shared_points)
-    elif kind in ("LineString", "MultiLineString"):
-        builder.add_linestring(geom, tags)
-    elif kind in ("Polygon", "MultiPolygon"):
-        builder.add_polygon(geom, tags)
-    else:
-        builder.stats["empty_geometries"] += 1
+        return [("node", n) for n in builder.add_point(geom, tags, shared=shared_points)]
+    if kind in ("LineString", "MultiLineString"):
+        return [("way", w) for w in builder.add_linestring(geom, tags)]
+    if kind in ("Polygon", "MultiPolygon"):
+        result = builder.add_polygon(geom, tags)
+        return [result] if result else []
+    builder.stats["empty_geometries"] += 1
+    return []
+
+
+def _plain_attributes(feature: dict, fields: list[str]) -> dict:
+    from .mapping import is_empty, format_value
+
+    out = {}
+    for f in fields:
+        v = feature.get(f)
+        if is_empty(v):
+            continue
+        out[f] = v if isinstance(v, (bool, int, float, str)) else format_value(v)
+    return out
 
 
 def format_report(reports: list[LayerReport], builder: OsmBuilder, written: dict | None) -> str:

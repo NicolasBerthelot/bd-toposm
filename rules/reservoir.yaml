@@ -11,6 +11,8 @@ rules:
 
   - first_match:
       - when: {nature: Château d'eau}
+        motif: >-
+          Réservoir surélevé : `man_made=water_tower` ; c'est aussi un bâtiment.
         set: {man_made: water_tower, building: "yes"}
       - when: {nature: Réservoir d'eau ou château d'eau au sol}
         set: {man_made: storage_tank, content: water}

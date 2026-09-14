@@ -25,6 +25,8 @@ rules:
       # Un fossé reste un fossé quelle que soit sa largeur : la nature de
       # l'ouvrage l'emporte sur la classe dimensionnelle.
       - when: {fosse: true}
+        motif: >-
+          Un fossé reste un fossé quelle que soit sa largeur : la nature de l'ouvrage l'emporte sur la classe dimensionnelle.
         set: {waterway: ditch}
 
       - when: {nature: Canal}
@@ -38,6 +40,8 @@ rules:
       # Le seuil OSM usuel entre `stream` et `river` se situe vers 5 m, ce qui
       # tombe exactement sur une borne de la nomenclature IGN.
       - when: {classe_de_largeur: [Plus de 50 m, Entre 15 et 50 m, Entre 5 et 15 m]}
+        motif: >-
+          `classe_de_largeur` est le seul critère dimensionnel disponible ; le seuil OSM usuel entre `stream` et `river` (≈ 5 m) tombe exactement sur une borne de la nomenclature IGN.
         set: {waterway: river}
 
       - when: {}
@@ -46,6 +50,8 @@ rules:
   # --------------------------------------------------------------- ouvrages
   # « Conduit buse » : écoulement busé sous un remblai ou une voirie.
   - when: {nature: Conduit buse}
+    motif: >-
+      Écoulement busé sous un remblai ou une voirie : `tunnel=culvert`.
     set: {tunnel: culvert, layer: "-1"}
 
   - set:

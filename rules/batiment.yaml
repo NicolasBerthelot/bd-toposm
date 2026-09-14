@@ -73,9 +73,13 @@ rules:
       #    229 978 résidentiels à exactement 1 logement contre 13 207 à 2 et
       #    plus — la distinction est solidement étayée par la source.
       - when: {usage_1: Résidentiel, nombre_de_logements: 1}
+        motif: >-
+          229 978 bâtiments résidentiels à exactement 1 logement dans la Vienne : `nombre_de_logements` étaye solidement la distinction maison / immeuble.
         set: {building: house}
 
       - when: {usage_1: Résidentiel, nombre_de_logements: {gte: 2}}
+        motif: >-
+          Plusieurs logements dans un bâtiment résidentiel : immeuble.
         set: {building: apartments}
 
       - when: {usage_1: Résidentiel}
@@ -87,9 +91,13 @@ rules:
       #    reste sort en `building=yes` avec l'usage source préservé, plutôt
       #    qu'en valeur inventée.
       - when: {usage_1: Annexe, construction_legere: true}
+        motif: >-
+          OSM n'a pas de valeur consensuelle pour « annexe » (garages, remises, abris confondus) ; `construction_legere` isole au moins les abris légers.
         set: {building: shed}
 
       - when: {usage_1: Annexe}
+        motif: >-
+          Annexe sans autre précision : `building=yes` avec l'usage source conservé, plutôt qu'une valeur inventée.
         set: {building: "yes"}
 
       - when: {usage_1: Commercial et services}
@@ -113,6 +121,8 @@ rules:
       #    serait fabriquer de l'information : on reste générique et on conserve
       #    la nature source, requalifiable.
       - when: {nature: "Industriel, agricole ou commercial"}
+        motif: >-
+          La nature exclut le résidentiel mais ne tranche pas entre trois fonctions aux valeurs OSM distinctes : en choisir une serait fabriquer de l'information. La nature source est conservée, requalifiable.
         set: {building: "yes"}
 
       - when: {}
@@ -122,6 +132,8 @@ rules:
   # `nature` donne la forme du bâtiment, `usage_1` atteste l'usage courant :
   # c'est la conjonction des deux qui justifie `amenity`, pas la forme seule.
   - when:
+    motif: >-
+      `nature` donne la forme du bâtiment, `usage_1` atteste l'usage courant : c'est leur conjonction qui justifie `amenity=place_of_worship`, pas la forme seule.
       all_of:
         - {nature: [Eglise, Chapelle]}
         - {usage_1: Religieux}
