@@ -111,3 +111,13 @@ body {
   margin-top: 6px;
   color: #666;
 }
+
+/* Le panneau de référence s'ouvre avec un max-height de 200 px posé en ligne
+   par iD (uiTagReference.done) et coupe tout ce qui dépasse. Avec l'explication
+   BD Topo antéposée, la référence OSM passait sous la ligne de flottaison.
+   `!important` l'emporte sur le style en ligne ; la fermeture reste possible
+   (iD retire `expanded` en fin d'animation) — elle devient seulement instantanée. */
+.ideditor .tag-reference-body.expanded {
+  max-height: 60vh !important;
+  overflow-y: auto !important;
+}
