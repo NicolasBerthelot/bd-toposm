@@ -193,9 +193,8 @@ au-delà de quelques centaines par écran.
 Géoplateforme, servis par le serveur sur `/data/imagery.min.json` : le
 **Parcellaire Express (PCI)** en surcouche transparente — limites de parcelles
 et numéros, un repère précis pour tracer ou ajuster une géométrie — et
-**Plan IGN** en fond. Le bouton « Cadastre » de la barre bascule la surcouche
-d'un clic ; elle reste aussi accessible dans le panneau Fond de carte. La BD
-Ortho, déjà au catalogue, reste le fond par défaut.
+**Plan IGN** en fond, tous deux dans le panneau Fond de carte (surcouches et
+fonds). La BD Ortho, déjà au catalogue, reste le fond par défaut.
 
 ### La documentation BD TOPO Explorer dans l'éditeur
 

@@ -103,16 +103,6 @@ body {
     display: none;   /* la place manque ; le compte reste dans le pied d'iD */
   }
 }
-.bdf-cadastre {
-  flex: none;
-}
-.bdf-cadastre[aria-pressed="true"] {
-  background-color: #000091;
-  color: #fff;
-}
-.bdf-cadastre[aria-pressed="true"]:hover {
-  background-color: #1212ff;
-}
 
 /* Dans un module, les cases « Fonctionnalités de la carte » d'iD sont toutes
  * décochées par construction : on l'explique plutôt que de le laisser deviner. */

@@ -55,7 +55,6 @@
       description: 'Végétation, lieux habités ou non, zones d’activité, terrains de sport, cimetières, espaces protégés.' }
   ];
 
-  var CADASTRE = 'fr.ign.cadastre.pci';   // identifiant dans web/fonds.json
   var STOCKAGE = 'bdf-module';
   var CLE_REGLE = 'module_';
   var COOKIE = 'bdf_layers';               // lu par l'API, cf. api.py
@@ -185,25 +184,6 @@
     badge.textContent = n ? n.toLocaleString('fr-FR') + (n > 1 ? ' objets à l’écran' : ' objet à l’écran') : 'aucun objet à l’écran';
   }
 
-  // ------------------------------------------------------------- cadastre
-
-  function sourceCadastre() {
-    return context.background().findSource(CADASTRE);
-  }
-
-  function basculerCadastre() {
-    var source = sourceCadastre();
-    if (!source) return;
-    context.background().toggleOverlayLayer(source);
-  }
-
-  function etatCadastre(bouton) {
-    var source = sourceCadastre();
-    var visible = !!source && context.background().showsLayer(source);
-    bouton.setAttribute('aria-pressed', visible ? 'true' : 'false');
-    bouton.disabled = !source;
-  }
-
   // ------------------------------------------------------------------ DOM
 
   function construire(conteneur) {
@@ -226,19 +206,6 @@
     });
 
     badge = conteneur.querySelector('.bdf-module-compte');
-
-    var bouton = conteneur.querySelector('.bdf-cadastre');
-    if (bouton) {
-      bouton.addEventListener('click', basculerCadastre);
-      context.background().on('change.bdf-cadastre', function () { etatCadastre(bouton); });
-      // Le catalogue d'imagerie se charge après `init` : on réessaie jusqu'à
-      // ce que la source existe.
-      var essais = 0;
-      (function attendre() {
-        etatCadastre(bouton);
-        if (bouton.disabled && essais++ < 50) window.setTimeout(attendre, 200);
-      })();
-    }
   }
 
   // ------------------------------------------------------------ démarrage
