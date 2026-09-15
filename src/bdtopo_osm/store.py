@@ -44,6 +44,19 @@ CREATE VIRTUAL TABLE IF NOT EXISTS node_index USING rtree(
     id, min_lon, max_lon, min_lat, max_lat
 );
 
+-- Index spatiaux de second niveau : l'emprise de chaque way, et les nœuds
+-- porteurs de tags (points). La couche BD Topo d'origine est en colonne
+-- auxiliaire : /api/0.6/map peut ainsi sélectionner les ways d'une emprise
+-- sans passer par leurs nœuds, et filtrer par couche (modules thématiques)
+-- au prix d'un simple test sur chaque candidat. Une couche NULL désigne un
+-- objet créé dans l'éditeur, renvoyé quel que soit le filtre.
+CREATE VIRTUAL TABLE IF NOT EXISTS way_index USING rtree(
+    id, min_lon, max_lon, min_lat, max_lat, +layer TEXT
+);
+CREATE VIRTUAL TABLE IF NOT EXISTS point_index USING rtree(
+    id, min_lon, max_lon, min_lat, max_lat, +layer TEXT
+);
+
 CREATE TABLE IF NOT EXISTS node_tags (
     node_id INTEGER NOT NULL,
     k       TEXT    NOT NULL,
@@ -200,7 +213,82 @@ def ensure_schema(con: sqlite3.Connection) -> None:
     if not con.execute("SELECT 1 FROM sequences WHERE name = 'changeset'").fetchone():
         largest = con.execute("SELECT coalesce(max(id), 0) FROM changesets").fetchone()[0]
         con.execute("INSERT INTO sequences (name, value) VALUES ('changeset', ?)", (largest,))
+    if not has_spatial_index(con):
+        # Base convertie avant les index de ways et de points : une passe sur
+        # way_nodes (quelques dizaines de secondes par million de ways).
+        build_spatial_indexes(con)
     con.commit()
+
+
+# ------------------------------------------------------- index spatiaux
+
+
+def has_spatial_index(con: sqlite3.Connection) -> bool:
+    """Vrai si `way_index` existe et est alimenté (ou si la base n'a pas de way)."""
+    row = con.execute(
+        "SELECT 1 FROM sqlite_master WHERE type = 'table' AND name = 'way_index'"
+    ).fetchone()
+    if row is None:
+        return False
+    if con.execute("SELECT EXISTS (SELECT 1 FROM way_index)").fetchone()[0]:
+        return True
+    return not con.execute("SELECT EXISTS (SELECT 1 FROM ways WHERE visible = 1)").fetchone()[0]
+
+
+_WAY_LAYER_SQL = (
+    "coalesce("
+    "  (SELECT p.layer FROM provenance p WHERE p.element_type = 'way' AND p.element_id = w.id),"
+    "  (SELECT p.layer FROM relation_members rm JOIN provenance p"
+    "     ON p.element_type = 'relation' AND p.element_id = rm.relation_id"
+    "   WHERE rm.member_type = 'way' AND rm.member_id = w.id LIMIT 1))"
+)
+
+
+def reindex_ways(con: sqlite3.Connection, way_ids: list[int] | None = None) -> None:
+    """(Re)calcule l'emprise et la couche des ways donnés, ou de tous."""
+    if way_ids is None:
+        con.execute("DELETE FROM way_index")
+        where, params = "w.visible = 1", ()
+    else:
+        if not way_ids:
+            return
+        marks = ",".join("?" * len(way_ids))
+        con.execute(f"DELETE FROM way_index WHERE id IN ({marks})", way_ids)
+        where, params = f"w.visible = 1 AND w.id IN ({marks})", tuple(way_ids)
+    con.execute(
+        "INSERT INTO way_index (id, min_lon, max_lon, min_lat, max_lat, layer) "
+        f"SELECT w.id, min(n.lon), max(n.lon), min(n.lat), max(n.lat), {_WAY_LAYER_SQL} "
+        "FROM ways w JOIN way_nodes wn ON wn.way_id = w.id JOIN nodes n ON n.id = wn.node_id "
+        f"WHERE {where} GROUP BY w.id",
+        params,
+    )
+
+
+def reindex_points(con: sqlite3.Connection, node_ids: list[int] | None = None) -> None:
+    """(Re)calcule l'index des nœuds porteurs de tags, donnés ou tous."""
+    if node_ids is None:
+        con.execute("DELETE FROM point_index")
+        where, params = "n.visible = 1", ()
+    else:
+        if not node_ids:
+            return
+        marks = ",".join("?" * len(node_ids))
+        con.execute(f"DELETE FROM point_index WHERE id IN ({marks})", node_ids)
+        where, params = f"n.visible = 1 AND n.id IN ({marks})", tuple(node_ids)
+    con.execute(
+        "INSERT INTO point_index (id, min_lon, max_lon, min_lat, max_lat, layer) "
+        "SELECT n.id, n.lon, n.lon, n.lat, n.lat, "
+        "  (SELECT p.layer FROM provenance p WHERE p.element_type = 'node' AND p.element_id = n.id) "
+        f"FROM nodes n WHERE {where} "
+        "AND EXISTS (SELECT 1 FROM node_tags t WHERE t.node_id = n.id)",
+        params,
+    )
+
+
+def build_spatial_indexes(con: sqlite3.Connection) -> None:
+    """Construction complète, en fin de conversion ou à la mise à niveau d'une base."""
+    reindex_ways(con)
+    reindex_points(con)
 
 
 # --------------------------------------------------------------- chargement
@@ -276,6 +364,7 @@ def load(con: sqlite3.Connection, builder: OsmBuilder, *, source_label: str = ""
             for (kind, element_id), (layer, attrs) in getattr(builder, "provenance", {}).items()
         ),
     )
+    build_spatial_indexes(con)
 
     con.executemany(
         "INSERT OR REPLACE INTO meta (key, value) VALUES (?, ?)",
@@ -433,6 +522,9 @@ def write_node(
         (node_id, lon, lon, lat, lat),
     )
     set_tags(con, "node", node_id, tags)
+    reindex_points(con, [node_id])
+    # Les emprises des ways passant par ce nœud sont recalculées par l'appelant
+    # (edit._Applier), en une fois pour tout le changeset.
 
 
 def write_way(
@@ -454,6 +546,7 @@ def write_way(
         [(way_id, seq, node_id) for seq, node_id in enumerate(nodes)],
     )
     set_tags(con, "way", way_id, tags)
+    reindex_ways(con, [way_id])
 
 
 def write_relation(
@@ -499,8 +592,10 @@ def delete_element(
     con.execute(f"DELETE FROM {tag_table} WHERE {column} = ?", (element_id,))
     if kind == "node":
         con.execute("DELETE FROM node_index WHERE id = ?", (element_id,))
+        con.execute("DELETE FROM point_index WHERE id = ?", (element_id,))
     elif kind == "way":
         con.execute("DELETE FROM way_nodes WHERE way_id = ?", (element_id,))
+        con.execute("DELETE FROM way_index WHERE id = ?", (element_id,))
     else:
         con.execute("DELETE FROM relation_members WHERE relation_id = ?", (element_id,))
     con.execute(
@@ -621,7 +716,9 @@ class MapResult:
 
 
 def query_map(
-    con: sqlite3.Connection, bbox: tuple[float, float, float, float]
+    con: sqlite3.Connection,
+    bbox: tuple[float, float, float, float],
+    layers: set[str] | frozenset[str] | None = None,
 ) -> MapResult:
     """Sélection OSM classique pour une emprise.
 
@@ -629,10 +726,23 @@ def query_map(
     nœud tombe dans l'emprise doit être renvoyé **entier**, avec tous ses nœuds,
     y compris ceux au-dehors. Sans cela l'éditeur reçoit des géométries
     tronquées et croit que l'objet s'arrête au bord de l'écran.
+
+    `layers` restreint la réponse aux objets issus de ces couches BD Topo :
+    c'est ce qui rend les modules thématiques légers, et permet de charger les
+    limites administratives à un zoom où la ville entière tient à l'écran.
+
+    Deux chemins : par les index de ways et de points quand la base les a
+    (`_query_map_indexed`, quelques dizaines de millisecondes par tuile), sinon
+    par les nœuds — le chemin d'origine, conservé pour une base antérieure
+    ouverte en lecture seule, où l'on ne peut pas construire les index.
     """
     min_lon, min_lat, max_lon, max_lat = bbox
 
     _reset_selection(con)
+    if has_spatial_index(con):
+        return _query_map_indexed(con, bbox, layers)
+    if layers is not None:
+        return _query_map_layers(con, bbox, layers)
 
     # 1. nœuds de l'emprise
     con.execute(
@@ -658,6 +768,146 @@ def query_map(
         "(member_type = 'way'  AND member_id IN (SELECT id FROM sel_ways))"
     )
 
+    return MapResult(
+        nodes=_fetch_nodes(con),
+        ways=_fetch_ways(con),
+        relations=_fetch_relations(con),
+    )
+
+
+def _select_layers(con: sqlite3.Connection, layers) -> None:
+    con.execute("CREATE TEMP TABLE IF NOT EXISTS sel_layers (layer TEXT PRIMARY KEY)")
+    con.execute("DELETE FROM sel_layers")
+    con.executemany("INSERT OR IGNORE INTO sel_layers (layer) VALUES (?)", [(l,) for l in layers])
+
+
+def _query_map_indexed(
+    con: sqlite3.Connection, bbox: tuple[float, float, float, float], layers
+) -> MapResult:
+    """Sélection par `way_index` et `point_index`.
+
+    L'index donne les ways dont l'emprise croise la boîte ; on ne garde que
+    ceux qui y ont réellement un nœud (sémantique de l'API OSM), sans quoi les
+    longs segments de limite administrative, à l'emprise de plusieurs
+    kilomètres, seraient renvoyés dans chaque tuile qu'elle recouvre. Les
+    nœuds des ways retenus suivent, entiers. Un point est retenu s'il est dans
+    la boîte. Avec `layers`, seuls les objets de ces couches — et ceux sans
+    couche, créés dans l'éditeur — sont renvoyés ; les relations sont filtrées
+    de même par leur provenance.
+    """
+    min_lon, min_lat, max_lon, max_lat = bbox
+    box = (min_lon, max_lon, min_lat, max_lat)
+    overlap = "max_lon >= ? AND min_lon <= ? AND max_lat >= ? AND min_lat <= ?"
+    if layers is None:
+        layer_clause = ""
+    else:
+        _select_layers(con, layers)
+        layer_clause = " AND (layer IS NULL OR layer IN (SELECT layer FROM sel_layers))"
+
+    con.execute(
+        f"INSERT OR IGNORE INTO sel_ways (id) SELECT id FROM way_index WHERE {overlap}{layer_clause}",
+        box,
+    )
+    con.execute(
+        "DELETE FROM sel_ways WHERE NOT EXISTS ("
+        "  SELECT 1 FROM way_nodes wn JOIN nodes n ON n.id = wn.node_id "
+        "  WHERE wn.way_id = sel_ways.id "
+        "  AND n.lon >= ? AND n.lon <= ? AND n.lat >= ? AND n.lat <= ?)",
+        box,
+    )
+    con.execute(
+        "INSERT OR IGNORE INTO sel_nodes (id) SELECT DISTINCT node_id FROM way_nodes "
+        "WHERE way_id IN (SELECT id FROM sel_ways)"
+    )
+    con.execute(
+        f"INSERT OR IGNORE INTO sel_nodes (id) SELECT id FROM point_index WHERE {overlap}{layer_clause}",
+        box,
+    )
+    con.execute(
+        "INSERT OR IGNORE INTO sel_relations (id) SELECT DISTINCT relation_id "
+        "FROM relation_members WHERE "
+        "(member_type = 'node' AND member_id IN (SELECT id FROM sel_nodes)) OR "
+        "(member_type = 'way'  AND member_id IN (SELECT id FROM sel_ways))"
+    )
+    if layers is not None:
+        con.execute(
+            "DELETE FROM sel_relations WHERE EXISTS (SELECT 1 FROM provenance p "
+            "WHERE p.element_type = 'relation' AND p.element_id = sel_relations.id "
+            "AND p.layer NOT IN (SELECT layer FROM sel_layers))"
+        )
+    return MapResult(
+        nodes=_fetch_nodes(con),
+        ways=_fetch_ways(con),
+        relations=_fetch_relations(con),
+    )
+
+
+def _query_map_layers(
+    con: sqlite3.Connection, bbox: tuple[float, float, float, float], layers
+) -> MapResult:
+    """Variante de `query_map` filtrée par couche d'origine.
+
+    Un objet est retenu si sa provenance est dans `layers`. Les objets sans
+    provenance sont ceux que l'éditeur ne trace pas : ways membres d'une
+    relation (leur relation porte la provenance) et créations des utilisateurs.
+    Les premiers suivent leur relation ; les secondes sont toujours renvoyées —
+    un contributeur doit retrouver son propre travail quel que soit le module.
+    """
+    min_lon, min_lat, max_lon, max_lat = bbox
+    _select_layers(con, layers)
+
+    # 1. ways touchant l'emprise, sans matérialiser tous les nœuds de la boîte
+    con.execute(
+        "INSERT OR IGNORE INTO sel_ways (id) SELECT DISTINCT wn.way_id "
+        "FROM node_index ni JOIN way_nodes wn ON wn.node_id = ni.id "
+        "WHERE ni.min_lon >= ? AND ni.max_lon <= ? AND ni.min_lat >= ? AND ni.max_lat <= ?",
+        (min_lon, max_lon, min_lat, max_lat),
+    )
+    # 2. filtre : provenance propre, sinon celle d'une relation parente
+    con.execute(
+        "DELETE FROM sel_ways WHERE "
+        "  EXISTS (SELECT 1 FROM provenance p WHERE p.element_type = 'way' "
+        "          AND p.element_id = sel_ways.id "
+        "          AND p.layer NOT IN (SELECT layer FROM sel_layers)) "
+        "  OR (NOT EXISTS (SELECT 1 FROM provenance p WHERE p.element_type = 'way' "
+        "                  AND p.element_id = sel_ways.id) "
+        "      AND EXISTS (SELECT 1 FROM relation_members rm JOIN provenance p "
+        "                  ON p.element_type = 'relation' AND p.element_id = rm.relation_id "
+        "                  WHERE rm.member_type = 'way' AND rm.member_id = sel_ways.id) "
+        "      AND NOT EXISTS (SELECT 1 FROM relation_members rm JOIN provenance p "
+        "                  ON p.element_type = 'relation' AND p.element_id = rm.relation_id "
+        "                  WHERE rm.member_type = 'way' AND rm.member_id = sel_ways.id "
+        "                  AND p.layer IN (SELECT layer FROM sel_layers)))"
+    )
+    # 3. tous les nœuds des ways retenus
+    con.execute(
+        "INSERT OR IGNORE INTO sel_nodes (id) SELECT DISTINCT node_id FROM way_nodes "
+        "WHERE way_id IN (SELECT id FROM sel_ways)"
+    )
+    # 4. nœuds isolés de l'emprise : ceux des couches demandées, et ceux créés
+    #    par les utilisateurs (sans provenance et hors de tout way)
+    con.execute(
+        "INSERT OR IGNORE INTO sel_nodes (id) SELECT ni.id FROM node_index ni "
+        "WHERE ni.min_lon >= ? AND ni.max_lon <= ? AND ni.min_lat >= ? AND ni.max_lat <= ? "
+        "  AND (EXISTS (SELECT 1 FROM provenance p WHERE p.element_type = 'node' "
+        "               AND p.element_id = ni.id AND p.layer IN (SELECT layer FROM sel_layers)) "
+        "       OR (NOT EXISTS (SELECT 1 FROM provenance p WHERE p.element_type = 'node' "
+        "                       AND p.element_id = ni.id) "
+        "           AND NOT EXISTS (SELECT 1 FROM way_nodes wn WHERE wn.node_id = ni.id)))",
+        (min_lon, max_lon, min_lat, max_lat),
+    )
+    # 5. relations référençant un élément retenu, filtrées de même
+    con.execute(
+        "INSERT OR IGNORE INTO sel_relations (id) SELECT DISTINCT relation_id "
+        "FROM relation_members WHERE "
+        "(member_type = 'node' AND member_id IN (SELECT id FROM sel_nodes)) OR "
+        "(member_type = 'way'  AND member_id IN (SELECT id FROM sel_ways))"
+    )
+    con.execute(
+        "DELETE FROM sel_relations WHERE EXISTS (SELECT 1 FROM provenance p "
+        "WHERE p.element_type = 'relation' AND p.element_id = sel_relations.id "
+        "AND p.layer NOT IN (SELECT layer FROM sel_layers))"
+    )
     return MapResult(
         nodes=_fetch_nodes(con),
         ways=_fetch_ways(con),

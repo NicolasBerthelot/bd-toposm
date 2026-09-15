@@ -45,6 +45,11 @@ CLEABS_PREFIXES = {
     "AERODROM": "aerodrome",
     "PISTAERO": "piste_d_aerodrome",
     "PAIHYDRO": "detail_hydrographique",
+    "COMMUNE_": "commune",
+    "CANTON__": "canton",
+    "ARRONDIS": "arrondissement",
+    "EPCI____": "epci",
+    "DEPARTEM": "departement",
 }
 
 

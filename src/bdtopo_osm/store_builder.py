@@ -37,6 +37,17 @@ class SqliteBuilder(OsmBuilder):
             "  PRIMARY KEY (lon, lat)"
             ") WITHOUT ROWID"
         )
+        # L'index de coordonnées est un outil de conversion, pas de service :
+        # `finalize` le supprime pour ne pas alourdir la base livrée. Pour
+        # reprendre au-dessus d'une base finalisée, on le reconstruit depuis
+        # les sommets des ways — ce sont eux que les couches suivantes doivent
+        # pouvoir rejoindre (extrémités de tronçons, pylônes sur une ligne).
+        if con.execute("SELECT NOT EXISTS (SELECT 1 FROM node_coords)").fetchone()[0]:
+            con.execute(
+                "INSERT OR IGNORE INTO node_coords (lon, lat, id) "
+                "SELECT n.lon, n.lat, n.id FROM nodes n "
+                "WHERE EXISTS (SELECT 1 FROM way_nodes w WHERE w.node_id = n.id)"
+            )
         con.commit()
 
         # Reprise possible sur une base déjà partiellement remplie : on repart
@@ -229,8 +240,12 @@ class SqliteBuilder(OsmBuilder):
             ],
         )
         con.commit()
+        con.execute("DROP TABLE IF EXISTS node_coords")
+        store.build_spatial_indexes(con)
+        con.commit()
         con.execute("ANALYZE")
         con.commit()
+        con.execute("VACUUM")  # rend au fichier la place de l'index supprimé
         self._final_counts = {
             table: con.execute(f"SELECT count(*) FROM {table}").fetchone()[0]
             for table in ("nodes", "ways", "relations")

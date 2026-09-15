@@ -1,0 +1,30 @@
+{
+  "_commentaire": "Fonds de carte ajoutés au catalogue d'imagerie d'iD (editor-layer-index), servis par api.py sur /data/imagery.min.json. Flux WMTS de la Géoplateforme IGN, en tuiles PM (Web Mercator), écrits sous forme de gabarit TMS pour iD. Un fond sans `polygon` est proposé partout : l'instance est française.",
+  "fonds": [
+    {
+      "id": "fr.ign.cadastre.pci",
+      "name": "Cadastre — parcellaire (PCI Express, IGN)",
+      "type": "tms",
+      "template": "https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=CADASTRALPARCELS.PARCELLAIRE_EXPRESS&STYLE=PCI%20vecteur&TILEMATRIXSET=PM&FORMAT=image/png&TILEMATRIX={zoom}&TILEROW={y}&TILECOL={x}",
+      "category": "map",
+      "overlay": true,
+      "zoomExtent": [6, 19],
+      "terms_url": "https://geoservices.ign.fr/parcellaire-express-pci",
+      "terms_text": "IGN — Parcellaire Express (PCI), Licence Ouverte 2.0",
+      "description": "Limites de parcelles, bâtiments et numéros du Plan cadastral informatisé, en surcouche transparente : un repère précis pour tracer ou ajuster une géométrie. Mise à jour trimestrielle.",
+      "icon": "https://www.ign.fr/files/default/styles/thumbnail/public/2020-06/logoIGN_300x200.png"
+    },
+    {
+      "id": "fr.ign.planignv2",
+      "name": "Plan IGN",
+      "type": "tms",
+      "template": "https://data.geopf.fr/wmts?SERVICE=WMTS&REQUEST=GetTile&VERSION=1.0.0&LAYER=GEOGRAPHICALGRIDSYSTEMS.PLANIGNV2&STYLE=normal&TILEMATRIXSET=PM&FORMAT=image/png&TILEMATRIX={zoom}&TILEROW={y}&TILECOL={x}",
+      "category": "map",
+      "zoomExtent": [0, 19],
+      "terms_url": "https://geoservices.ign.fr/planign",
+      "terms_text": "IGN — Plan IGN, Licence Ouverte 2.0",
+      "description": "Carte vectorielle de l'IGN, dessinée depuis la BD TOPO : utile pour comparer la donnée éditée à sa représentation cartographique.",
+      "icon": "https://www.ign.fr/files/default/styles/thumbnail/public/2020-06/logoIGN_300x200.png"
+    }
+  ]
+}

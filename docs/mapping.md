@@ -28,6 +28,11 @@ classification exclusive ; « (non converti) » un champ écarté, avec son moti
 | [poste_de_transformation](#poste-de-transformation) | `power` | 25 | 21 |
 | [piste_d_aerodrome](#piste-d-aerodrome) | `aeroway` | 26 | 21 |
 | [aerodrome](#aerodrome) | `aeroway` | 32 | 20 |
+| [commune](#commune) | `admin_level` | 44 | 28 |
+| [canton](#canton) | `political_division` | 30 | 23 |
+| [arrondissement](#arrondissement) | `admin_level` | 29 | 23 |
+| [epci](#epci) | `local_authority:FR` | 33 | 22 |
+| [departement](#departement) | `admin_level` | 28 | 21 |
 | [lieu_dit_non_habite](#lieu-dit-non-habite) | `place` | 26 | 20 |
 | [construction_ponctuelle](#construction-ponctuelle) | `man_made` | 43 | 21 |
 | [pylone](#pylone) | `power` | 25 | 20 |
@@ -40,6 +45,11 @@ classification exclusive ; « (non converti) » un champ écarté, avec son moti
 - **plan_d_eau** — Même logique : agrégation des surfaces hydrographiques, toponyme repris via `cpx_toponyme_de_plan_d_eau`.
 - **erp** — 8 entités seulement dans la Vienne pour 216 615 en France : la couche n'y est pas alimentée. Rien à convertir.
 - **transport_par_cable** — 2 entités dans la Vienne.
+- **region** — Le contour de Nouvelle-Aquitaine compte 214 524 sommets pour un seul objet (`admin_level=4`) : hors d'échelle pour une démonstration départementale, et il alourdirait la base de démonstration au-delà de ce que GitHub accepte. Règle triviale (`boundary=administrative` + `admin_level=4`) si le périmètre devient national.
+- **arrondissement_municipal** — Paris, Lyon, Marseille seulement ; aucun dans la Vienne.
+- **commune_associee_ou_deleguee** — Communes fusionnées (`admin_level=9`) ; à ajouter avec les mêmes règles que `commune` si l'on veut les fractions des communes nouvelles.
+- **collectivite_territoriale** — Confondue avec le département hors statuts particuliers (Corse, Paris, Lyon, outre-mer).
+- **condominium** — Île des Faisans, seul objet de la couche.
 - **adresse_ban** — Import adresses à part entière (volumétrie et règles propres), hors socle.
 
 ## troncon_de_route
@@ -496,8 +506,8 @@ Bâti BD Topo 3.5 → OSM. La classification `building` croise `nature` (la form
 | usage_1 | usage_1 = Sportif | `building` | sports_hall | branche 23 — exclusif, première correspondance |
 | nature | nature = Industriel, agricole ou commercial | `building` | yes | branche 24 — exclusif, première correspondance ; motif : La nature exclut le résidentiel mais ne tranche pas entre trois fonctions aux valeurs OSM distinctes : en choisir une serait fabriquer de l'information. La nature source est conservée, requalifiable. |
 | — | (sinon) | `building` | yes | branche 25 — exclusif, première correspondance |
-| — | (toujours) | `amenity` | place_of_worship | motif : `nature` donne la forme du bâtiment, `usage_1` atteste l'usage courant : c'est leur conjonction qui justifie `amenity=place_of_worship`, pas la forme seule. all_of: - {nature: [Eglise, Chapelle]} - {usage_1: Religieux} |
-| — | (toujours) | `religion` | christian | motif : `nature` donne la forme du bâtiment, `usage_1` atteste l'usage courant : c'est leur conjonction qui justifie `amenity=place_of_worship`, pas la forme seule. all_of: - {nature: [Eglise, Chapelle]} - {usage_1: Religieux} |
+| nature, usage_1 | (nature ∈ {Eglise, Chapelle}) et (usage_1 = Religieux) | `amenity` | place_of_worship | motif : `nature` donne la forme du bâtiment, `usage_1` atteste l'usage courant : c'est leur conjonction qui justifie `amenity=place_of_worship`, pas la forme seule. |
+| nature, usage_1 | (nature ∈ {Eglise, Chapelle}) et (usage_1 = Religieux) | `religion` | christian | motif : `nature` donne la forme du bâtiment, `usage_1` atteste l'usage courant : c'est leur conjonction qui justifie `amenity=place_of_worship`, pas la forme seule. |
 | hauteur | (valeur reprise telle quelle) | `height` | = valeur source | arrondi à 1 décimale(s) |
 | nombre_d_etages | (valeur reprise telle quelle) | `building:levels` | = valeur source |  |
 | nombre_de_logements | (valeur reprise telle quelle) | `building:flats` | = valeur source | ignoré si valeur ∈ {0} |
@@ -1294,6 +1304,205 @@ Aérodromes et héliports, en emprise. 21 dans la Vienne, dont l'aéroport de Po
 | identifiant_voie_ban |  | (non converti) |  | Candidat `ref:FR:BAN` — à arbitrer avec l'import adresses. ; métadonnée commune |
 | id_ban_odonyme |  | (non converti) |  | Idem. ; métadonnée commune |
 | etat_de_l_objet |  | (non converti) |  | Toujours « En service » dans la Vienne. |
+
+## commune
+
+Communes → relations `type=boundary` + `boundary=administrative` + `admin_level=8`. Chaque commune garde son propre contour (polygone simple) : les limites communes à deux voisines ne sont pas mutualisées, contrairement à la pratique OSM, mais l'identité `cleabs` reste entière et la géométrie est celle de la BD TOPO. 34 877 communes en France, 13 intersectant Poitiers.
+
+| Champ BD Topo | Valeur / condition | Tag OSM | Valeur OSM | Remarque |
+|---|---|---|---|---|
+| — | (toujours) | `source` | IGN BD TOPO® 3.5 |  |
+| cleabs | (valeur reprise telle quelle) | `ref:FR:IGN:cleabs` | {cleabs} |  |
+| — | (toujours) | `boundary` | administrative |  |
+| — | (toujours) | `admin_level` | 8 |  |
+| nom_officiel | (valeur reprise telle quelle) | `name` | = valeur source |  |
+| code_insee | (valeur reprise telle quelle) | `ref:INSEE` | = valeur source |  |
+| code_siren | (valeur reprise telle quelle) | `ref:FR:SIREN` | = valeur source |  |
+| code_postal | (valeur reprise telle quelle) | `postal_code` | = valeur source |  |
+| population | (valeur reprise telle quelle) | `population` | = valeur source | motif : Population légale publiée par l'INSEE et reprise par la BD TOPO ; OSM attend l'année du recensement (`population:date`) et l'organisme (`source:population`) pour qu'elle soit interprétable. ; si population > 0 |
+| date_du_recensement | (valeur reprise telle quelle) | `population:date` | = valeur source | motif : Population légale publiée par l'INSEE et reprise par la BD TOPO ; OSM attend l'année du recensement (`population:date`) et l'organisme (`source:population`) pour qu'elle soit interprétable. ; si population > 0 |
+| organisme_recenseur | (valeur reprise telle quelle) | `source:population` | = valeur source | motif : Population légale publiée par l'INSEE et reprise par la BD TOPO ; OSM attend l'année du recensement (`population:date`) et l'organisme (`source:population`) pour qu'elle soit interprétable. ; si population > 0 |
+| chef_lieu_d_arrondissement | (valeur reprise telle quelle) | `bdtopo:chef_lieu_d_arrondissement` | = valeur source | ignoré si valeur ∈ {False} |
+| chef_lieu_de_departement | (valeur reprise telle quelle) | `bdtopo:chef_lieu_de_departement` | = valeur source | ignoré si valeur ∈ {False} |
+| chef_lieu_de_region | (valeur reprise telle quelle) | `bdtopo:chef_lieu_de_region` | = valeur source | ignoré si valeur ∈ {False} |
+| chef_lieu_de_collectivite_terr | (valeur reprise telle quelle) | `bdtopo:chef_lieu_de_collectivite_terr` | = valeur source | ignoré si valeur ∈ {False} |
+| capitale_d_etat | (valeur reprise telle quelle) | `bdtopo:capitale_d_etat` | = valeur source | ignoré si valeur ∈ {False} |
+| date_creation |  | (non converti) |  | Métadonnée de production IGN, sans équivalent OSM. ; métadonnée commune |
+| date_modification |  | (non converti) |  | Idem. ; métadonnée commune |
+| date_d_apparition |  | (non converti) |  | Idem. ; métadonnée commune |
+| date_de_confirmation |  | (non converti) |  | Idem. ; métadonnée commune |
+| sources |  | (non converti) |  | Provenance interne IGN ; le tag `source` porte déjà l'attribution. ; métadonnée commune |
+| identifiants_sources |  | (non converti) |  | Identifiants du producteur amont. ; métadonnée commune |
+| methode_d_acquisition_planimetrique |  | (non converti) |  | Qualité de saisie, hors modèle OSM. ; métadonnée commune |
+| methode_d_acquisition_altimetrique |  | (non converti) |  | Idem, et l'altimétrie est écartée (Z supprimé). ; métadonnée commune |
+| precision_planimetrique |  | (non converti) |  | Idem. ; métadonnée commune |
+| precision_altimetrique |  | (non converti) |  | Idem. ; métadonnée commune |
+| mode_d_obtention_des_coordonnees |  | (non converti) |  | Idem. ; métadonnée commune |
+| mode_d_obtention_de_l_altitude |  | (non converti) |  | Idem. ; métadonnée commune |
+| statut |  | (non converti) |  | État de validation interne ; toujours « Validé » en diffusion. ; métadonnée commune |
+| statut_du_toponyme |  | (non converti) |  | Qualité du toponyme (Validé / Collecté), métadonnée de saisie. ; métadonnée commune |
+| code_du_pays |  | (non converti) |  | Toujours « FR » sur le territoire traité. ; métadonnée commune |
+| insee_commune |  | (non converti) |  | Rattachement administratif, déductible de la géométrie. ; métadonnée commune |
+| commune |  | (non converti) |  | Idem, et redondant avec `insee_commune`. ; métadonnée commune |
+| identifiant_voie_ban |  | (non converti) |  | Candidat `ref:FR:BAN` — à arbitrer avec l'import adresses. ; métadonnée commune |
+| id_ban_odonyme |  | (non converti) |  | Idem. ; métadonnée commune |
+| code_insee_du_canton |  | (non converti) |  | Rattachement hiérarchique, porté par la géométrie (le canton est converti). |
+| code_insee_de_l_arrondissement |  | (non converti) |  | Idem (l'arrondissement est converti). |
+| code_insee_de_la_collectivite_terr |  | (non converti) |  | Idem. |
+| code_insee_du_departement |  | (non converti) |  | Idem (le département est converti). |
+| code_insee_de_la_region |  | (non converti) |  | Idem. |
+| codes_siren_des_epci |  | (non converti) |  | Idem (l'EPCI est converti, avec son SIREN). |
+| superficie_cadastrale |  | (non converti) |  | Surface en hectares ; OSM ne stocke pas une surface calculable. |
+| lien_vers_chef_lieu |  | (non converti) |  | Lien interne vers la zone d'habitation chef-lieu. |
+| liens_vers_autorite_administrative |  | (non converti) |  | Lien interne vers la mairie (zone_d_activite_ou_d_interet). |
+
+## canton
+
+Cantons → relations `type=boundary` + `boundary=political` + `political_division=canton`. Circonscriptions électorales départementales, pas des collectivités : OSM les range sous `political`, pas `administrative`. 2 054 en France, 8 intersectant Poitiers.
+
+| Champ BD Topo | Valeur / condition | Tag OSM | Valeur OSM | Remarque |
+|---|---|---|---|---|
+| — | (toujours) | `source` | IGN BD TOPO® 3.5 |  |
+| cleabs | (valeur reprise telle quelle) | `ref:FR:IGN:cleabs` | {cleabs} |  |
+| — | (toujours) | `boundary` | political |  |
+| — | (toujours) | `political_division` | canton |  |
+| nom_officiel | (valeur reprise telle quelle) | `name` | = valeur source |  |
+| code_insee | (valeur reprise telle quelle) | `ref:INSEE` | = valeur source |  |
+| composition_du_canton | (valeur reprise telle quelle) | `bdtopo:composition_du_canton` | = valeur source |  |
+| date_creation |  | (non converti) |  | Métadonnée de production IGN, sans équivalent OSM. ; métadonnée commune |
+| date_modification |  | (non converti) |  | Idem. ; métadonnée commune |
+| date_d_apparition |  | (non converti) |  | Idem. ; métadonnée commune |
+| date_de_confirmation |  | (non converti) |  | Idem. ; métadonnée commune |
+| sources |  | (non converti) |  | Provenance interne IGN ; le tag `source` porte déjà l'attribution. ; métadonnée commune |
+| identifiants_sources |  | (non converti) |  | Identifiants du producteur amont. ; métadonnée commune |
+| methode_d_acquisition_planimetrique |  | (non converti) |  | Qualité de saisie, hors modèle OSM. ; métadonnée commune |
+| methode_d_acquisition_altimetrique |  | (non converti) |  | Idem, et l'altimétrie est écartée (Z supprimé). ; métadonnée commune |
+| precision_planimetrique |  | (non converti) |  | Idem. ; métadonnée commune |
+| precision_altimetrique |  | (non converti) |  | Idem. ; métadonnée commune |
+| mode_d_obtention_des_coordonnees |  | (non converti) |  | Idem. ; métadonnée commune |
+| mode_d_obtention_de_l_altitude |  | (non converti) |  | Idem. ; métadonnée commune |
+| statut |  | (non converti) |  | État de validation interne ; toujours « Validé » en diffusion. ; métadonnée commune |
+| statut_du_toponyme |  | (non converti) |  | Qualité du toponyme (Validé / Collecté), métadonnée de saisie. ; métadonnée commune |
+| code_du_pays |  | (non converti) |  | Toujours « FR » sur le territoire traité. ; métadonnée commune |
+| insee_commune |  | (non converti) |  | Rattachement administratif, déductible de la géométrie. ; métadonnée commune |
+| commune |  | (non converti) |  | Idem, et redondant avec `insee_commune`. ; métadonnée commune |
+| identifiant_voie_ban |  | (non converti) |  | Candidat `ref:FR:BAN` — à arbitrer avec l'import adresses. ; métadonnée commune |
+| id_ban_odonyme |  | (non converti) |  | Idem. ; métadonnée commune |
+| numero_du_canton |  | (non converti) |  | Deux derniers chiffres de `code_insee`, redondant. |
+| code_insee_du_departement |  | (non converti) |  | Rattachement hiérarchique, porté par la géométrie. |
+| code_insee_de_la_region |  | (non converti) |  | Idem. |
+| codes_insee_des_arrondissements |  | (non converti) |  | Idem. |
+
+## arrondissement
+
+Arrondissements départementaux → relations `type=boundary` + `boundary=administrative` + `admin_level=7`. 332 en France.
+
+| Champ BD Topo | Valeur / condition | Tag OSM | Valeur OSM | Remarque |
+|---|---|---|---|---|
+| — | (toujours) | `source` | IGN BD TOPO® 3.5 |  |
+| cleabs | (valeur reprise telle quelle) | `ref:FR:IGN:cleabs` | {cleabs} |  |
+| — | (toujours) | `boundary` | administrative |  |
+| — | (toujours) | `admin_level` | 7 |  |
+| nom_officiel | (valeur reprise telle quelle) | `name` | = valeur source |  |
+| code_insee_de_l_arrondissement | (valeur reprise telle quelle) | `ref:INSEE` | = valeur source |  |
+| date_creation |  | (non converti) |  | Métadonnée de production IGN, sans équivalent OSM. ; métadonnée commune |
+| date_modification |  | (non converti) |  | Idem. ; métadonnée commune |
+| date_d_apparition |  | (non converti) |  | Idem. ; métadonnée commune |
+| date_de_confirmation |  | (non converti) |  | Idem. ; métadonnée commune |
+| sources |  | (non converti) |  | Provenance interne IGN ; le tag `source` porte déjà l'attribution. ; métadonnée commune |
+| identifiants_sources |  | (non converti) |  | Identifiants du producteur amont. ; métadonnée commune |
+| methode_d_acquisition_planimetrique |  | (non converti) |  | Qualité de saisie, hors modèle OSM. ; métadonnée commune |
+| methode_d_acquisition_altimetrique |  | (non converti) |  | Idem, et l'altimétrie est écartée (Z supprimé). ; métadonnée commune |
+| precision_planimetrique |  | (non converti) |  | Idem. ; métadonnée commune |
+| precision_altimetrique |  | (non converti) |  | Idem. ; métadonnée commune |
+| mode_d_obtention_des_coordonnees |  | (non converti) |  | Idem. ; métadonnée commune |
+| mode_d_obtention_de_l_altitude |  | (non converti) |  | Idem. ; métadonnée commune |
+| statut |  | (non converti) |  | État de validation interne ; toujours « Validé » en diffusion. ; métadonnée commune |
+| statut_du_toponyme |  | (non converti) |  | Qualité du toponyme (Validé / Collecté), métadonnée de saisie. ; métadonnée commune |
+| code_du_pays |  | (non converti) |  | Toujours « FR » sur le territoire traité. ; métadonnée commune |
+| insee_commune |  | (non converti) |  | Rattachement administratif, déductible de la géométrie. ; métadonnée commune |
+| commune |  | (non converti) |  | Idem, et redondant avec `insee_commune`. ; métadonnée commune |
+| identifiant_voie_ban |  | (non converti) |  | Candidat `ref:FR:BAN` — à arbitrer avec l'import adresses. ; métadonnée commune |
+| id_ban_odonyme |  | (non converti) |  | Idem. ; métadonnée commune |
+| numero_de_l_arrondissement |  | (non converti) |  | Dernier chiffre de `code_insee_de_l_arrondissement`, redondant. |
+| code_insee_du_departement |  | (non converti) |  | Rattachement hiérarchique, porté par la géométrie. |
+| code_insee_de_la_region |  | (non converti) |  | Idem. |
+| liens_vers_autorite_administrative |  | (non converti) |  | Lien interne vers la sous-préfecture (zone_d_activite_ou_d_interet). |
+
+## epci
+
+Intercommunalités → relations `type=boundary` + `boundary=local_authority`, la nature juridique dans `local_authority:FR` (convention OSM France). 1 265 EPCI à fiscalité propre en France.
+
+| Champ BD Topo | Valeur / condition | Tag OSM | Valeur OSM | Remarque |
+|---|---|---|---|---|
+| — | (toujours) | `source` | IGN BD TOPO® 3.5 |  |
+| cleabs | (valeur reprise telle quelle) | `ref:FR:IGN:cleabs` | {cleabs} |  |
+| — | (toujours) | `boundary` | local_authority |  |
+| nom_officiel | (valeur reprise telle quelle) | `name` | = valeur source |  |
+| code_siren | (valeur reprise telle quelle) | `ref:FR:SIREN` | = valeur source |  |
+| nature | Communauté de communes | `local_authority:FR` | CC |  |
+| nature | Communauté d'agglomération | `local_authority:FR` | CA |  |
+| nature | Communauté urbaine | `local_authority:FR` | CU |  |
+| nature | Métropole | `local_authority:FR` | metropole |  |
+| nature | Etablissement public territorial | `local_authority:FR` | EPT |  |
+| nature | (valeur reprise telle quelle) | `bdtopo:nature` | = valeur source |  |
+| date_creation |  | (non converti) |  | Métadonnée de production IGN, sans équivalent OSM. ; métadonnée commune |
+| date_modification |  | (non converti) |  | Idem. ; métadonnée commune |
+| date_d_apparition |  | (non converti) |  | Idem. ; métadonnée commune |
+| date_de_confirmation |  | (non converti) |  | Idem. ; métadonnée commune |
+| sources |  | (non converti) |  | Provenance interne IGN ; le tag `source` porte déjà l'attribution. ; métadonnée commune |
+| identifiants_sources |  | (non converti) |  | Identifiants du producteur amont. ; métadonnée commune |
+| methode_d_acquisition_planimetrique |  | (non converti) |  | Qualité de saisie, hors modèle OSM. ; métadonnée commune |
+| methode_d_acquisition_altimetrique |  | (non converti) |  | Idem, et l'altimétrie est écartée (Z supprimé). ; métadonnée commune |
+| precision_planimetrique |  | (non converti) |  | Idem. ; métadonnée commune |
+| precision_altimetrique |  | (non converti) |  | Idem. ; métadonnée commune |
+| mode_d_obtention_des_coordonnees |  | (non converti) |  | Idem. ; métadonnée commune |
+| mode_d_obtention_de_l_altitude |  | (non converti) |  | Idem. ; métadonnée commune |
+| statut |  | (non converti) |  | État de validation interne ; toujours « Validé » en diffusion. ; métadonnée commune |
+| statut_du_toponyme |  | (non converti) |  | Qualité du toponyme (Validé / Collecté), métadonnée de saisie. ; métadonnée commune |
+| code_du_pays |  | (non converti) |  | Toujours « FR » sur le territoire traité. ; métadonnée commune |
+| insee_commune |  | (non converti) |  | Rattachement administratif, déductible de la géométrie. ; métadonnée commune |
+| commune |  | (non converti) |  | Idem, et redondant avec `insee_commune`. ; métadonnée commune |
+| identifiant_voie_ban |  | (non converti) |  | Candidat `ref:FR:BAN` — à arbitrer avec l'import adresses. ; métadonnée commune |
+| id_ban_odonyme |  | (non converti) |  | Idem. ; métadonnée commune |
+| codes_insee_des_communes_membres |  | (non converti) |  | Composition, portée par la géométrie (les communes sont converties). |
+| codes_insee_des_departements_membres |  | (non converti) |  | Idem. |
+| liens_vers_autorite_administrative |  | (non converti) |  | Lien interne vers le siège (zone_d_activite_ou_d_interet). |
+
+## departement
+
+Départements → relations `type=boundary` + `boundary=administrative` + `admin_level=6`. 101 en France.
+
+| Champ BD Topo | Valeur / condition | Tag OSM | Valeur OSM | Remarque |
+|---|---|---|---|---|
+| — | (toujours) | `source` | IGN BD TOPO® 3.5 |  |
+| cleabs | (valeur reprise telle quelle) | `ref:FR:IGN:cleabs` | {cleabs} |  |
+| — | (toujours) | `boundary` | administrative |  |
+| — | (toujours) | `admin_level` | 6 |  |
+| nom_officiel | (valeur reprise telle quelle) | `name` | = valeur source |  |
+| code_insee | (valeur reprise telle quelle) | `ref:INSEE` | = valeur source |  |
+| code_siren | (valeur reprise telle quelle) | `ref:FR:SIREN` | = valeur source |  |
+| date_creation |  | (non converti) |  | Métadonnée de production IGN, sans équivalent OSM. ; métadonnée commune |
+| date_modification |  | (non converti) |  | Idem. ; métadonnée commune |
+| date_d_apparition |  | (non converti) |  | Idem. ; métadonnée commune |
+| date_de_confirmation |  | (non converti) |  | Idem. ; métadonnée commune |
+| sources |  | (non converti) |  | Provenance interne IGN ; le tag `source` porte déjà l'attribution. ; métadonnée commune |
+| identifiants_sources |  | (non converti) |  | Identifiants du producteur amont. ; métadonnée commune |
+| methode_d_acquisition_planimetrique |  | (non converti) |  | Qualité de saisie, hors modèle OSM. ; métadonnée commune |
+| methode_d_acquisition_altimetrique |  | (non converti) |  | Idem, et l'altimétrie est écartée (Z supprimé). ; métadonnée commune |
+| precision_planimetrique |  | (non converti) |  | Idem. ; métadonnée commune |
+| precision_altimetrique |  | (non converti) |  | Idem. ; métadonnée commune |
+| mode_d_obtention_des_coordonnees |  | (non converti) |  | Idem. ; métadonnée commune |
+| mode_d_obtention_de_l_altitude |  | (non converti) |  | Idem. ; métadonnée commune |
+| statut |  | (non converti) |  | État de validation interne ; toujours « Validé » en diffusion. ; métadonnée commune |
+| statut_du_toponyme |  | (non converti) |  | Qualité du toponyme (Validé / Collecté), métadonnée de saisie. ; métadonnée commune |
+| code_du_pays |  | (non converti) |  | Toujours « FR » sur le territoire traité. ; métadonnée commune |
+| insee_commune |  | (non converti) |  | Rattachement administratif, déductible de la géométrie. ; métadonnée commune |
+| commune |  | (non converti) |  | Idem, et redondant avec `insee_commune`. ; métadonnée commune |
+| identifiant_voie_ban |  | (non converti) |  | Candidat `ref:FR:BAN` — à arbitrer avec l'import adresses. ; métadonnée commune |
+| id_ban_odonyme |  | (non converti) |  | Idem. ; métadonnée commune |
+| code_insee_de_la_region |  | (non converti) |  | Rattachement hiérarchique, porté par la géométrie. |
+| liens_vers_autorite_administrative |  | (non converti) |  | Lien interne vers la préfecture (zone_d_activite_ou_d_interet). |
 
 ## lieu_dit_non_habite
 

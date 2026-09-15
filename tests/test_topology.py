@@ -173,3 +173,19 @@ def test_sqlite_builder_reprend_au_dessus_des_identifiants_existants(tmp_path):
     assert con.execute("SELECT max(id) FROM ways").fetchone()[0] == max_way + 1
     assert con.execute("SELECT count(*) FROM nodes").fetchone()[0] == 3
     con.close()
+
+
+def test_limite_administrative_toujours_en_relation_boundary():
+    """Un carré serait un way fermé en mode `area` ; en mode `boundary`, la
+    relation est systématique (convention OSM, et c'est ce qu'iD reconnaît)."""
+    b = MemoryBuilder()
+    carre = Polygon([(0, 0), (1, 0), (1, 1), (0, 1), (0, 0)])
+    kind, rid = b.add_polygon(carre, {"boundary": "administrative", "admin_level": "8"}, mode="boundary")
+
+    assert kind == "relation"
+    relation = b.relations[rid]
+    assert relation.tags["type"] == "boundary"
+    assert relation.tags["admin_level"] == "8"
+    assert [role for _, _, role in relation.members] == ["outer"]
+    assert all(not b.ways[ref].tags for _, ref, _ in relation.members)
+    assert b.stats["boundaries"] == 1 and b.stats["multipolygons"] == 0

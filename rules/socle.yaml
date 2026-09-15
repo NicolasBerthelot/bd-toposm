@@ -33,6 +33,13 @@ couches:
   - layer: piste_d_aerodrome             #      30
   - layer: aerodrome                     #      21
 
+  # ---- limites administratives (relations type=boundary, polygones simples)
+  - layer: commune                       #     280
+  - layer: canton                        #      19
+  - layer: arrondissement                #       3
+  - layer: epci                          #       7
+  - layer: departement                   #       1
+
   # ---- points (après les géométries qu'ils peuvent rejoindre)
   - layer: lieu_dit_non_habite           #  14 696
   - layer: construction_ponctuelle       #   4 161
@@ -60,5 +67,17 @@ exclues:
     8 entités seulement dans la Vienne pour 216 615 en France : la couche n'y
     est pas alimentée. Rien à convertir.
   transport_par_cable: 2 entités dans la Vienne.
+  region: >-
+    Le contour de Nouvelle-Aquitaine compte 214 524 sommets pour un seul objet
+    (`admin_level=4`) : hors d'échelle pour une démonstration départementale,
+    et il alourdirait la base de démonstration au-delà de ce que GitHub accepte.
+    Règle triviale (`boundary=administrative` + `admin_level=4`) si le
+    périmètre devient national.
+  arrondissement_municipal: Paris, Lyon, Marseille seulement ; aucun dans la Vienne.
+  commune_associee_ou_deleguee: >-
+    Communes fusionnées (`admin_level=9`) ; à ajouter avec les mêmes règles que
+    `commune` si l'on veut les fractions des communes nouvelles.
+  collectivite_territoriale: Confondue avec le département hors statuts particuliers (Corse, Paris, Lyon, outre-mer).
+  condominium: Île des Faisans, seul objet de la couche.
   adresse_ban: >-
     Import adresses à part entière (volumétrie et règles propres), hors socle.

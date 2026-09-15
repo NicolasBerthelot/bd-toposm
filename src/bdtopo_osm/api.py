@@ -24,7 +24,7 @@ import sqlite3
 import time
 from pathlib import Path
 from typing import Iterator
-from urllib.parse import urlencode, urlparse
+from urllib.parse import unquote, urlencode, urlparse
 from xml.etree import ElementTree as ET
 from xml.sax.saxutils import quoteattr
 
@@ -329,14 +329,34 @@ def create_app(
 
     # ------------------------------------------------------------------ map
 
-    def _query(bbox: str):
+    # Filtrage par couche BD Topo (modules thématiques). iD ne sait pas ajouter
+    # de paramètre à ses requêtes de tuiles : le module pose donc un cookie
+    # `bdf_layers` (même origine), que le paramètre `layers=` explicite
+    # supplante — utile en ligne de commande et dans les tests.
+    LAYERS_COOKIE = "bdf_layers"
+
+    def _layers(request: Request, layers: str | None) -> frozenset[str] | None:
+        raw = layers
+        if raw is None:
+            # La virgule est interdite dans une valeur de cookie : le client
+            # l'encode (%2C), et Starlette ne décode pas.
+            raw = unquote(request.cookies.get(LAYERS_COOKIE, ""))
+        if not raw:
+            return None
+        return frozenset(name.strip() for name in raw.split(",") if name.strip())
+
+    def _query(request: Request, bbox: str, layers: str | None):
         box = parse_bbox(bbox)
         con = connection()
-        return con, box, store.query_map(con, box)
+        return con, box, store.query_map(con, box, _layers(request, layers))
 
     @app.get("/api/0.6/map.json")
-    def map_json(bbox: str = Query(..., description="min_lon,min_lat,max_lon,max_lat")):
-        con, _, result = _query(bbox)
+    def map_json(
+        request: Request,
+        bbox: str = Query(..., description="min_lon,min_lat,max_lon,max_lat"),
+        layers: str | None = Query(None, description="couches BD Topo, séparées par des virgules"),
+    ):
+        con, _, result = _query(request, bbox, layers)
 
         def stream() -> Iterator[str]:
             try:
@@ -347,8 +367,12 @@ def create_app(
         return StreamingResponse(stream(), media_type="application/json")
 
     @app.get("/api/0.6/map")
-    def map_xml(bbox: str = Query(..., description="min_lon,min_lat,max_lon,max_lat")):
-        con, box, result = _query(bbox)
+    def map_xml(
+        request: Request,
+        bbox: str = Query(..., description="min_lon,min_lat,max_lon,max_lat"),
+        layers: str | None = Query(None, description="couches BD Topo, séparées par des virgules"),
+    ):
+        con, box, result = _query(request, bbox, layers)
 
         def stream() -> Iterator[str]:
             try:
@@ -717,21 +741,39 @@ def create_app(
         layer, attributes = found
         rules = _ruleset(layer)
         explanations = rules.explain(attributes)
-        return {
-            "layer": layer,
-            "attributes": attributes,
-            "tags": {
-                key: {
-                    "value": e.value,
-                    "mode": e.mode,
-                    "branch": e.branch,
-                    "condition": e.condition,
-                    "motif": e.motif,
-                    "fields": e.fields,
-                }
-                for key, e in explanations.items()
-            },
+        tags = {
+            key: {
+                "value": e.value,
+                "mode": e.mode,
+                "branch": e.branch,
+                "condition": e.condition,
+                "motif": e.motif,
+                "fields": e.fields,
+            }
+            for key, e in explanations.items()
         }
+        if kind == "relation" and "type" not in tags:
+            # Posé par le constructeur de géométries, pas par une règle : la
+            # surface est portée par une relation (contour trop long, trous,
+            # plusieurs parties) ou c'est une limite administrative.
+            boundary = rules.polygon_mode == "boundary"
+            tags["type"] = {
+                "value": "boundary" if boundary else "multipolygon",
+                "mode": "literal",
+                "branch": None,
+                "condition": "",
+                "motif": (
+                    "Convention OSM des limites administratives : la géométrie est une "
+                    "relation `type=boundary` dont les ways membres (rôle `outer`) portent "
+                    "le contour. Chaque entité BD TOPO garde son propre contour."
+                    if boundary else
+                    "Structure OSM : la surface a des trous, plusieurs parties ou un contour "
+                    "de plus de 2 000 nœuds ; elle est donc portée par une relation "
+                    "`type=multipolygon` dont les ways membres tracent les anneaux."
+                ),
+                "fields": {},
+            }
+        return {"layer": layer, "attributes": attributes, "tags": tags}
 
     # ----------------------------------------------------------- diagnostic
 
@@ -793,6 +835,31 @@ def create_app(
             @app.get("/bdtopo-docs.json")
             def bdtopo_docs() -> FileResponse:
                 return FileResponse(WEB_DIR / "bdtopo-docs.json", media_type="application/json")
+
+        # ---- modules thématiques (filtrage par couche BD Topo) et fonds ajoutés
+        if (WEB_DIR / "modules.js").exists():
+
+            @app.get("/modules.js")
+            def modules_js() -> FileResponse:
+                return FileResponse(WEB_DIR / "modules.js", media_type="text/javascript")
+
+        # iD lit son catalogue d'imagerie dans `data/imagery.min.json` ; on y
+        # ajoute les flux Géoplateforme de web/fonds.json (cadastre en surcouche,
+        # Plan IGN). Le catalogue d'origine reste entier : ses fonds IGN (BD
+        # Ortho, marquée « best ») restent le fond par défaut.
+        fonds_file = WEB_DIR / "fonds.json"
+        dist_imagery = id_dir / "data" / "imagery.min.json"
+        if fonds_file.exists() and dist_imagery.exists():
+            _imagery_cache: dict = {}
+
+            @app.get("/data/imagery.min.json")
+            def imagery() -> list:
+                if not _imagery_cache:
+                    sources = json.loads(dist_imagery.read_text(encoding="utf-8"))
+                    extra = json.loads(fonds_file.read_text(encoding="utf-8"))["fonds"]
+                    known = {s["id"] for s in sources}
+                    _imagery_cache["doc"] = sources + [f for f in extra if f["id"] not in known]
+                return _imagery_cache["doc"]
 
         # ---- locale française d'iD, réécrite pour BD France
         # iD charge `locales/fr.min.json` depuis assetPath ; cette route prend

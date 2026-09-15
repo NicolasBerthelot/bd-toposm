@@ -116,7 +116,10 @@ def convert(
                     if not tags:
                         report.untagged += 1
                         continue
-                    created = _emit(builder, geometries[chunk_start + offset], tags, shared_points)
+                    created = _emit(
+                        builder, geometries[chunk_start + offset], tags,
+                        shared_points, ruleset.polygon_mode,
+                    )
                     if created:
                         source_attrs = _plain_attributes(feature, used_fields)
                         for kind, element_id in created:
@@ -164,7 +167,11 @@ def convert(
 
 
 def _emit(
-    builder: OsmBuilder, geom, tags: dict[str, str], shared_points: bool = False
+    builder: OsmBuilder,
+    geom,
+    tags: dict[str, str],
+    shared_points: bool = False,
+    polygon_mode: str = "area",
 ) -> list[tuple[str, int]]:
     """Émet la géométrie et renvoie les éléments *porteurs de tags* créés."""
     kind = geom.geom_type if geom is not None else None
@@ -173,7 +180,7 @@ def _emit(
     if kind in ("LineString", "MultiLineString"):
         return [("way", w) for w in builder.add_linestring(geom, tags)]
     if kind in ("Polygon", "MultiPolygon"):
-        result = builder.add_polygon(geom, tags)
+        result = builder.add_polygon(geom, tags, mode=polygon_mode)
         return [result] if result else []
     builder.stats["empty_geometries"] += 1
     return []
@@ -231,6 +238,7 @@ def format_report(reports: list[LayerReport], builder: OsmBuilder, written: dict
     lines.append(f"   relations {s['relations']:>10}")
     lines.append(
         f"   dont {s['closed_ways']} ways fermés, {s['multipolygons']} multipolygones, "
+        f"{s.get('boundaries', 0)} limites administratives, "
         f"{s['ways_split']} segments issus d'un découpage (>2000 nœuds)"
     )
     lines.append(

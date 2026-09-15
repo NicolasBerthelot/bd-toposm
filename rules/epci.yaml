@@ -1,0 +1,30 @@
+layer: epci
+description: >-
+  Intercommunalités → relations `type=boundary` + `boundary=local_authority`,
+  la nature juridique dans `local_authority:FR` (convention OSM France).
+  1 265 EPCI à fiscalité propre en France.
+
+report_key: local_authority:FR
+polygon_mode: boundary
+
+rules:
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+      boundary: local_authority
+      name: {from: nom_officiel}
+      "ref:FR:SIREN": {from: code_siren}
+      "local_authority:FR":
+        from: nature
+        map:
+          Communauté de communes: CC
+          Communauté d'agglomération: CA
+          Communauté urbaine: CU
+          Métropole: metropole
+          Etablissement public territorial: EPT
+      "bdtopo:nature": {from: nature}
+
+unmapped:
+  codes_insee_des_communes_membres: Composition, portée par la géométrie (les communes sont converties).
+  codes_insee_des_departements_membres: Idem.
+  liens_vers_autorite_administrative: Lien interne vers le siège (zone_d_activite_ou_d_interet).

@@ -26,8 +26,9 @@ couches IGN.
 | 1 | Moteur de règles, mapping routes + bâti, écriture `.osm` | ✅ |
 | 2a | Base SQLite + API 0.6 **en lecture**, iD branché dessus | ✅ |
 | 2b | Écriture : changesets, upload osmChange, OAuth2 | ✅ |
-| 3 | Socle OSM-utile : 23 couches converties | ✅ |
+| 3 | Socle OSM-utile : 28 couches converties (dont les limites administratives) | ✅ |
 | 4 | Passage à l'échelle du département (moteur SQLite) | ✅ |
+| 4b | Modules thématiques dans l'éditeur, filtrage serveur par couche, cadastre en surcouche | ✅ |
 | 5 | Propagation de classe (bretelles, ronds-points), relations d'itinéraire et de cours d'eau | à faire |
 
 ## Usage
@@ -48,7 +49,7 @@ une base SQLite servable.
 .\.venv\Scripts\python.exe -m bdtopo_osm.cli serve --db .\export\poitiers.db
 ```
 
-## Le socle : 23 couches
+## Le socle : 28 couches
 
 `--layers socle` convertit les couches listées dans `rules/socle.yaml`, **dans
 l'ordre du manifeste** : linéaires et surfaciques d'abord, ponctuelles ensuite,
@@ -56,6 +57,20 @@ pour qu'un objet ponctuel en `point_mode: shared` trouve déjà en place le somm
 sur lequel se greffer. Vérifié sur Poitiers : les 92 pylônes sont tous des
 sommets d'une `power=line` — la coïncidence exacte des coordonnées BD Topo
 vaut aussi entre couches distinctes.
+
+**Limites administratives** (`commune`, `canton`, `arrondissement`, `epci`,
+`departement`) : chaque entité devient une relation `type=boundary` dont les
+ways membres portent son contour (`polygon_mode: boundary` dans la règle,
+relation systématique — c'est à `type=boundary` qu'iD reconnaît une limite).
+Les contours restent propres à chaque entité : deux communes voisines ont
+chacune leur anneau, à la différence de la pratique OSM des segments partagés
+— mais les sommets, eux, sont mutualisés par la déduplication exacte, la couche
+administrative de la BD Topo étant topologique comme les autres. Tags selon
+les conventions OSM France : `admin_level` 8/7/6, `boundary=political` +
+`political_division=canton` pour les cantons, `boundary=local_authority` +
+`local_authority:FR=CC|CA|CU|metropole|EPT` pour les EPCI, `ref:INSEE`,
+`ref:FR:SIREN`, `population` daté et sourcé. La région (214 524 sommets pour
+un seul objet) reste hors socle, motif dans le manifeste.
 
 Chaque exclusion du socle est motivée dans le manifeste. Trois méritent d'être
 connues :
@@ -88,7 +103,9 @@ non couvert en mode `--strict`.
 
 Le graphe d'un département ne tient pas en mémoire : `SqliteBuilder`
 (`store_builder.py`) écrit au fil de l'eau dans la base cible et déplace la
-déduplication des sommets dans une table `node_coords (lon, lat) → id`. Ce qui
+déduplication des sommets dans une table `node_coords (lon, lat) → id`, outil
+de conversion supprimé à la finalisation (et reconstruit depuis les sommets des
+ways si l'on reprend au-dessus d'une base finalisée). Ce qui
 rend l'exactitude possible : un REAL SQLite est le même double IEEE 754 que la
 coordonnée shapely — l'égalité stricte garde exactement le sens qu'elle avait
 en mémoire. Les règles topologiques (anneaux, multipolygones, découpage à
@@ -140,6 +157,45 @@ build d'iD :
 
 Le DSFR est récupéré à la construction depuis le paquet npm `@gouvfr/dsfr`
 (feuille de style et police), comme iD.
+
+### Les modules thématiques
+
+La barre sous l'en-tête (`web/modules.js`) propose des entrées thématiques —
+Réseau routier, Bâti, Hydrographie, Limites administratives, Transports,
+Énergie, Occupation du sol — qui ne montrent que les couches BD Topo de leur
+thème. Un module est un sous-ensemble de couches ; l'activer allège la carte et
+ouvre la voie à des outils propres à chaque thème. Deux mécanismes se
+complètent :
+
+- **côté éditeur**, une règle de filtrage iD par module, enregistrée à côté des
+  règles natives (`context.features()`), qui reconnaît la couche d'origine au
+  préfixe du `ref:FR:IGN:cleabs`. Activer un module désactive les règles
+  natives et n'active que la sienne : iD masque un objet quand toutes les
+  règles qu'il satisfait sont désactivées. Les objets créés dans l'éditeur,
+  sans version, ne sont jamais masqués. Le panneau « Données de carte »
+  l'explique quand un module est actif ;
+- **côté serveur**, un cookie `bdf_layers` (ou le paramètre `layers=`) que
+  `/api/0.6/map.json` honore : la réponse ne contient que les couches
+  demandées, plus les objets sans provenance (créés à la main). Les tuiles
+  deviennent légères, ce qui permet au module Limites administratives de
+  charger dès le zoom 14 (`minEditableZoom`, tuiles de zoom 15) — une commune
+  entière à l'écran, là où iD s'arrête au zoom 16.
+
+Le module est porté par `#module=` dans l'URL (partageable) et mémorisé dans
+le navigateur ; changer de module vide le cache de tuiles d'iD sans toucher à
+l'historique des modifications en cours. Un effet de bord bienvenu : dans un
+module, aucun seuil d'auto-masquage — iD cache d'ordinaire les bâtiments
+au-delà de quelques centaines par écran.
+
+### Le cadastre et Plan IGN en fond
+
+`web/fonds.json` ajoute au catalogue d'imagerie d'iD deux flux WMTS de la
+Géoplateforme, servis par le serveur sur `/data/imagery.min.json` : le
+**Parcellaire Express (PCI)** en surcouche transparente — limites de parcelles
+et numéros, un repère précis pour tracer ou ajuster une géométrie — et
+**Plan IGN** en fond. Le bouton « Cadastre » de la barre bascule la surcouche
+d'un clic ; elle reste aussi accessible dans le panneau Fond de carte. La BD
+Ortho, déjà au catalogue, reste le fond par défaut.
 
 ### La documentation BD TOPO Explorer dans l'éditeur
 
@@ -199,7 +255,18 @@ lui fait masquer les outils d'édition plutôt que d'échouer à l'enregistremen
 **Index spatial : R*Tree, pas quadtile.** Le serveur OSM officiel encode une
 colonne *quadtile* parce que PostgreSQL n'offrait pas d'index spatial sans
 PostGIS. SQLite embarque R*Tree en standard, qui fait le même travail sans
-réimplémenter d'entrelacement de bits.
+réimplémenter d'entrelacement de bits. Trois index : les nœuds
+(`node_index`), l'emprise de chaque way (`way_index`) et les nœuds porteurs de
+tags (`point_index`), ces deux derniers avec la couche BD Topo d'origine en
+colonne auxiliaire. La sélection part des ways de l'emprise, ne garde que ceux
+qui y ont un nœud, puis complète ; filtrer par couche (`?layers=` ou cookie
+`bdf_layers`) revient à tester une colonne sur chaque candidat. Une tuile de
+zoom 14 ne contenant que les limites administratives passe ainsi de 460 ms à
+110 ms, une tuile de zoom 16 complète de 92 ms à 50 ms. Les index sont
+construits à la finalisation et entretenus à chaque écriture (un nœud déplacé
+recalcule l'emprise des ways qui l'utilisent) ; une base antérieure ouverte en
+écriture les reçoit à la mise à niveau, en lecture seule elle reste servie par
+le chemin d'origine, par les nœuds.
 
 **La sélection n'est pas « tout ce qui est dans la boîte ».** Un way dont un
 seul nœud tombe dans l'emprise revient **entier**, avec tous ses nœuds y compris
@@ -368,8 +435,9 @@ Trois refus assumés, chacun documenté dans le YAML concerné :
 - **Nœuds de degré 2** conservés tels quels. Fusionner les tronçons adjacents à
   tags identiques (≈ 8 %) compliquerait la correspondance `cleabs → osm_id`, un
   way OSM valant alors plusieurs `cleabs`.
-- **Limites administratives** hors périmètre : elles exigeraient une
-  décomposition des contours en ways partagés entre communes voisines.
+- **Limites administratives** en polygones simples : les contours ne sont pas
+  décomposés en segments partagés entre communes voisines (les sommets, eux,
+  le sont). Un déplacement de limite doit donc être fait deux fois.
 
 ## Résultat sur Poitiers
 

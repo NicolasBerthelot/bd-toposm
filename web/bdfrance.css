@@ -39,6 +39,96 @@ body {
   display: none;
 }
 
+/* ---------------------------------------------------- modules thématiques */
+
+.bdf-modules {
+  background: #fff;
+}
+.bdf-modules__barre {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 2.75rem;
+}
+.bdf-modules .fr-nav {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+/* Sur petit écran le DSFR empile le menu en colonne, avec des filets entre
+ * les entrées : ici la barre doit rester une ligne au-dessus de la carte —
+ * défilante horizontalement quand la place manque, plutôt qu'empilée. */
+.bdf-modules .fr-nav__list {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
+}
+.bdf-modules .fr-nav__item {
+  flex: none;
+  position: static;
+}
+.bdf-modules .fr-nav__item::before {
+  content: none;
+}
+.bdf-modules .fr-nav__link {
+  min-height: 2.75rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+.bdf-modules .fr-nav__link[aria-current]:not([aria-current=false]) {
+  font-weight: 700;
+}
+/* Le DSFR marque l'entrée courante d'une barre verticale à gauche ; sur une
+ * barre horizontale, un soulignement est plus lisible. */
+.bdf-modules .fr-nav__link[aria-current]:not([aria-current=false])::before {
+  top: auto;
+  bottom: 0;
+  left: 0.875rem;
+  right: 0.875rem;
+  width: auto;
+  height: 2px;
+  margin-top: 0;
+}
+.bdf-module-compte {
+  flex: none;
+  margin: 0;
+  font-size: 0.75rem;
+  color: #666;
+  white-space: nowrap;
+}
+@media (max-width: 61.99em) {
+  .bdf-module-compte {
+    display: none;   /* la place manque ; le compte reste dans le pied d'iD */
+  }
+}
+.bdf-cadastre {
+  flex: none;
+}
+.bdf-cadastre[aria-pressed="true"] {
+  background-color: #000091;
+  color: #fff;
+}
+.bdf-cadastre[aria-pressed="true"]:hover {
+  background-color: #1212ff;
+}
+
+/* Dans un module, les cases « Fonctionnalités de la carte » d'iD sont toutes
+ * décochées par construction : on l'explique plutôt que de le laisser deviner. */
+.bdf-module-actif .ideditor .layer-feature-list::before {
+  content: var(--bdf-module-note, "");
+  display: block;
+  margin: 0 0 8px;
+  padding: 8px 10px;
+  border-left: 3px solid #000091;
+  background: #f5f5fe;
+  color: #3a3a3a;
+  font-size: 12px;
+  line-height: 1.4;
+  white-space: normal;
+}
+
 /* --------------------------------------------------------------- éditeur */
 
 #id-container {

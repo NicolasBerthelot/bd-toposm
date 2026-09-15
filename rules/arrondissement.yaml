@@ -1,0 +1,22 @@
+layer: arrondissement
+description: >-
+  Arrondissements départementaux → relations `type=boundary` +
+  `boundary=administrative` + `admin_level=7`. 332 en France.
+
+report_key: admin_level
+polygon_mode: boundary
+
+rules:
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+      boundary: administrative
+      admin_level: "7"
+      name: {from: nom_officiel}
+      "ref:INSEE": {from: code_insee_de_l_arrondissement}
+
+unmapped:
+  numero_de_l_arrondissement: Dernier chiffre de `code_insee_de_l_arrondissement`, redondant.
+  code_insee_du_departement: Rattachement hiérarchique, porté par la géométrie.
+  code_insee_de_la_region: Idem.
+  liens_vers_autorite_administrative: Lien interne vers la sous-préfecture (zone_d_activite_ou_d_interet).

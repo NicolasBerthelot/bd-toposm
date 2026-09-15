@@ -88,6 +88,9 @@ class _Applier:
         self.diff: list[DiffEntry] = []
         self.touched = 0
         self.bbox: list[float] | None = None
+        # Nœuds écrits : les emprises des ways qui passent par eux sont
+        # recalculées en fin de changeset (store.reindex_ways).
+        self.moved_nodes: set[int] = set()
 
     # -- utilitaires
 
@@ -129,6 +132,23 @@ class _Applier:
             self.bbox[1] = min(self.bbox[1], lat)
             self.bbox[2] = max(self.bbox[2], lon)
             self.bbox[3] = max(self.bbox[3], lat)
+
+    def reindex_parent_ways(self) -> None:
+        """Un nœud déplacé change l'emprise de tous les ways qui l'utilisent."""
+        if not self.moved_nodes:
+            return
+        ids = list(self.moved_nodes)
+        ways: set[int] = set()
+        for start in range(0, len(ids), 500):
+            chunk = ids[start : start + 500]
+            marks = ",".join("?" * len(chunk))
+            ways.update(
+                row[0]
+                for row in self.con.execute(
+                    f"SELECT DISTINCT way_id FROM way_nodes WHERE node_id IN ({marks})", chunk
+                )
+            )
+        store.reindex_ways(self.con, sorted(ways))
 
     def count(self) -> None:
         self.touched += 1
@@ -179,6 +199,7 @@ class _Applier:
         if kind == "node":
             lon, lat, tags = self._node_payload(element)
             store.write_node(self.con, new_id, lon, lat, 1, self.changeset_id, tags)
+            self.moved_nodes.add(new_id)
             self.note_point(lon, lat)
         elif kind == "way":
             store.write_way(
@@ -202,6 +223,7 @@ class _Applier:
         if kind == "node":
             lon, lat, tags = self._node_payload(element)
             store.write_node(self.con, element_id, lon, lat, version, self.changeset_id, tags)
+            self.moved_nodes.add(element_id)
             self.note_point(lon, lat)
         elif kind == "way":
             store.write_way(
@@ -287,6 +309,7 @@ def apply_osmchange(
                 else:
                     applier.delete(element, if_unused)
 
+        applier.reindex_parent_ways()
         store.record_changeset_activity(
             con, changeset_id, applier.touched, tuple(applier.bbox) if applier.bbox else None
         )

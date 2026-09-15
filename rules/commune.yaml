@@ -1,0 +1,54 @@
+layer: commune
+description: >-
+  Communes → relations `type=boundary` + `boundary=administrative` +
+  `admin_level=8`. Chaque commune garde son propre contour (polygone simple) :
+  les limites communes à deux voisines ne sont pas mutualisées, contrairement à
+  la pratique OSM, mais l'identité `cleabs` reste entière et la géométrie est
+  celle de la BD TOPO. 34 877 communes en France, 13 intersectant Poitiers.
+
+report_key: admin_level
+polygon_mode: boundary
+
+rules:
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+      boundary: administrative
+      admin_level: "8"
+      name: {from: nom_officiel}
+      "ref:INSEE": {from: code_insee}
+      "ref:FR:SIREN": {from: code_siren}
+      postal_code: {from: code_postal}
+
+  # ------------------------------------------------------------ population
+  # La BD TOPO reprend la population légale INSEE ; OSM la date et la source.
+  - when: {population: {gt: 0}}
+    motif: >-
+      Population légale publiée par l'INSEE et reprise par la BD TOPO ; OSM
+      attend l'année du recensement (`population:date`) et l'organisme
+      (`source:population`) pour qu'elle soit interprétable.
+    set:
+      population: {from: population}
+      "population:date": {from: date_du_recensement, year: true}
+      "source:population": {from: organisme_recenseur}
+
+  # --------------------------------------------- statut de chef-lieu (préservé)
+  # OSM porte le rang de capitale (`capital=6`…) sur le nœud `place`, pas sur
+  # la limite. Le statut est conservé sous préfixe IGN, seulement quand vrai.
+  - set:
+      "bdtopo:chef_lieu_d_arrondissement": {from: chef_lieu_d_arrondissement, drop_values: [false]}
+      "bdtopo:chef_lieu_de_departement": {from: chef_lieu_de_departement, drop_values: [false]}
+      "bdtopo:chef_lieu_de_region": {from: chef_lieu_de_region, drop_values: [false]}
+      "bdtopo:chef_lieu_de_collectivite_terr": {from: chef_lieu_de_collectivite_terr, drop_values: [false]}
+      "bdtopo:capitale_d_etat": {from: capitale_d_etat, drop_values: [false]}
+
+unmapped:
+  code_insee_du_canton: Rattachement hiérarchique, porté par la géométrie (le canton est converti).
+  code_insee_de_l_arrondissement: Idem (l'arrondissement est converti).
+  code_insee_de_la_collectivite_terr: Idem.
+  code_insee_du_departement: Idem (le département est converti).
+  code_insee_de_la_region: Idem.
+  codes_siren_des_epci: Idem (l'EPCI est converti, avec son SIREN).
+  superficie_cadastrale: Surface en hectares ; OSM ne stocke pas une surface calculable.
+  lien_vers_chef_lieu: Lien interne vers la zone d'habitation chef-lieu.
+  liens_vers_autorite_administrative: Lien interne vers la mairie (zone_d_activite_ou_d_interet).

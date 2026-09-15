@@ -1,6 +1,6 @@
 {
  "source": "https://bdtopoexplorer.ign.fr",
- "extrait_le": "2026-09-11",
+ "extrait_le": "2026-09-15",
  "prefixes": {
   "TRONROUT": "troncon_de_route",
   "BATIMENT": "batiment",
@@ -24,7 +24,12 @@
   "RESERVOI": "reservoir",
   "AERODROM": "aerodrome",
   "PISTAERO": "piste_d_aerodrome",
-  "PAIHYDRO": "detail_hydrographique"
+  "PAIHYDRO": "detail_hydrographique",
+  "COMMUNE_": "commune",
+  "CANTON__": "canton",
+  "ARRONDIS": "arrondissement",
+  "EPCI____": "epci",
+  "DEPARTEM": "departement"
  },
  "couches": {
   "troncon_de_route": {
@@ -5628,6 +5633,266 @@
     }
    },
    "theme": "Transport"
+  },
+  "commune": {
+   "label": "Commune",
+   "definition": "La commune est la collectivité territoriale de base, la plus petite division administrative française. Elle est administrée par le maire. Elle exerce de nombreuses compétences en autonomie. C’est la collectivité la plus répandue sur le territoire. La commune est la subdivision administrative la plus ancienne, puisqu'elle a succédé aux villes et paroisses du Moyen Âge. Elle a été instituée en 1789 avant de connaître un début d'autonomie avec la loi du 5 avril 1884, véritable charte communale. Le maire est l'exécutif de la commune qu'il représente et dont il gère le budget. Il est l'employeur du personnel communal et exerce les compétences de proximité (écoles, urbanisme, action sociale, voirie, transports scolaires, ramassage des ordures ménagères, assainissement, etc.). Il est également agent de l'État pour les fonctions d'état civil, d'ordre public, d'organisation des élections et de délivrance de titres réglementaires. Au 1er janvier 2025, on comptait 34 875 communes, dont 34 746 en métropole et 129 en Outre-Mer. Source Insee",
+   "url": "https://bdtopoexplorer.ign.fr/commune",
+   "attributes": {
+    "code_insee": {
+     "label": "Code Insee de la commune",
+     "definition": "Il s’agit du numéro officiel attribué par l’Insee à la Commune : il est composé de 5 caractères, les deux premiers correspondant au numéro de Département .",
+     "url": "https://bdtopoexplorer.ign.fr/commune#attribute_177",
+     "values": {}
+    },
+    "code_insee_du_canton": {
+     "label": "Code Insee du canton",
+     "definition": "Il s'agit plus précisément du code du pseudo-canton fourni par l'Insee. La commune peut appartenir à plusieurs cantons. Dans ce cas, le code canton attribué est un numéro de canton supérieur ou égal à 80.",
+     "url": "https://bdtopoexplorer.ign.fr/commune#attribute_178",
+     "values": {}
+    },
+    "code_insee_de_l_arrondissement": {
+     "label": "Code Insee de l'arrondissement",
+     "definition": "Code Insee de l' Arrondissement . Pour la classe Commune : Code Insee de l' Arrondissement auquel appartient la Commune .",
+     "url": "https://bdtopoexplorer.ign.fr/commune#attribute_179",
+     "values": {}
+    },
+    "code_insee_de_la_collectivite_terr": {
+     "label": "Code Insee de la collectivité terr",
+     "definition": "Code INSEE de la Collectivité territoriale de niveau départemental incluant cette Commune .",
+     "url": "https://bdtopoexplorer.ign.fr/commune#attribute_180",
+     "values": {}
+    },
+    "superficie_cadastrale": {
+     "label": "Superficie cadastrale",
+     "definition": "La superficie est exprimée en ha et correspond à la superficie cadastrale publiée par l'Insee, qui comprend « toutes les surfaces du domaine public et privé, cadastrées ou non cadastrées, à l'exception des lacs, étangs et glaciers de plus d'un kilomètre carré ainsi que des estuaires ». Source Insee",
+     "url": "https://bdtopoexplorer.ign.fr/commune#attribute_910",
+     "values": {}
+    },
+    "chef_lieu_d_arrondissement": {
+     "label": "Chef-lieu d'arrondissement",
+     "definition": "Indique si la commune est chef-lieu d' Arrondissement ou non.",
+     "url": "https://bdtopoexplorer.ign.fr/commune#attribute_190",
+     "values": {}
+    },
+    "chef_lieu_de_collectivite_terr": {
+     "label": "Chef-lieu de collectivité terr",
+     "definition": "Indique si la commune est chef-lieu d'une Collectivité territoriale ou non.",
+     "url": "https://bdtopoexplorer.ign.fr/commune#attribute_191",
+     "values": {}
+    },
+    "chef_lieu_de_departement": {
+     "label": "Chef-lieu de département",
+     "definition": "Indique si la commune est chef-lieu d'un Département ou non.",
+     "url": "https://bdtopoexplorer.ign.fr/commune#attribute_192",
+     "values": {}
+    },
+    "chef_lieu_de_region": {
+     "label": "Chef-lieu de région",
+     "definition": "Indique si la commune est chef-lieu d'une Région ou non.",
+     "url": "https://bdtopoexplorer.ign.fr/commune#attribute_193",
+     "values": {}
+    },
+    "capitale_d_etat": {
+     "label": "Capitale d'Etat",
+     "definition": "Indique si la commune est la capitale d'<Etat> ou non.",
+     "url": "https://bdtopoexplorer.ign.fr/commune#attribute_194",
+     "values": {}
+    },
+    "date_du_recensement": {
+     "label": "Date du recensement",
+     "definition": "Date du recensement correspondant au chiffre de population saisi dans le champ 'Population'.",
+     "url": "https://bdtopoexplorer.ign.fr/commune#attribute_195",
+     "values": {}
+    },
+    "organisme_recenseur": {
+     "label": "Organisme recenseur",
+     "definition": "Organisme officiel fournissant les données de la population des unités administratives françaises. L'Insee étant le seul fournisseur officiel de cette donnée, l'organisme recenseur présente l'unique valeur \" INSEE\".",
+     "url": "https://bdtopoexplorer.ign.fr/commune#attribute_196",
+     "values": {}
+    },
+    "codes_siren_des_epci": {
+     "label": "Codes SIREN des EPCI",
+     "definition": "codes SIREN des EPCI à fiscalité propre auxquels appartient la Commune .",
+     "url": "https://bdtopoexplorer.ign.fr/commune#attribute_199",
+     "values": {}
+    },
+    "lien_vers_chef_lieu": {
+     "label": "Lien vers chef-lieu",
+     "definition": "Lien vers l’identifiant de la Zone d'habitation du chef-lieu duquel dépend la Commune .",
+     "url": "https://bdtopoexplorer.ign.fr/commune#attribute_200",
+     "values": {}
+    },
+    "liens_vers_autorite_administrative": {
+     "label": "Liens vers autorité administrative",
+     "definition": "Lien vers la clé absolue de l'objet <Zone d'activité ou d'intérêt >, de Nature=\"Mairie\", de la Commune concernée, lieu de l'autorité administrative communale.",
+     "url": "https://bdtopoexplorer.ign.fr/commune#attribute_201",
+     "values": {}
+    }
+   },
+   "theme": "Administratif"
+  },
+  "canton": {
+   "label": "Canton",
+   "definition": "Le canton est la circonscription servant de cadre à l'élection des conseils départementaux, anciennement conseils généraux, définie par la loi du 17 mai 2013. Cette loi impose un redécoupage des cantons selon des critères démographiques, et leur nombre est réduit de moitié ; chacun des nouveaux cantons élit au scrutin binominal deux élus, nécessairement de sexes différents. La composition des nouveaux cantons est décrite dans des décrets publiés en février 2014. Les cantons ne sont plus nécessairement des subdivisions territoriales des arrondissements. Dans la plupart des cas, les cantons englobent plusieurs communes. Mais les cantons ne respectent pas toujours les limites communales : ils peuvent être à cheval sur plusieurs communes ou être inclus strictement dans une commune. Les premières élections des conseils départementaux, appelées « élections départementales », anciennement « élections cantonales », se sont déroulées en mars 2015. Il n'existe plus désormais de chefs-lieux de canton mais des bureaux centralisateurs, en fonction lors des élections départementales. Source Insee",
+   "url": "https://bdtopoexplorer.ign.fr/canton",
+   "attributes": {
+    "numero_du_canton": {
+     "label": "Numéro du canton",
+     "definition": "Il s’agit du numéro officiel attribué par l’Insee au Canton. Il est codé sur deux chiffres.",
+     "url": "https://bdtopoexplorer.ign.fr/canton#attribute_1628",
+     "values": {}
+    },
+    "code_insee": {
+     "label": "Code Insee du canton",
+     "definition": "Il s’agit du numéro officiel attribué par l’Insee au Canton : il est composé de 4 à 5 caractères, les deux ou trois premiers correspondant au numéro de Département .",
+     "url": "https://bdtopoexplorer.ign.fr/canton#attribute_1766",
+     "values": {}
+    },
+    "composition_du_canton": {
+     "label": "Composition du canton",
+     "definition": "Indique que le canton est composé de communes entières ou de fractions de communes.",
+     "url": "https://bdtopoexplorer.ign.fr/canton#attribute_1806",
+     "values": {
+      "Commune(s) entière(s)": {
+       "definition": "",
+       "url": "https://bdtopoexplorer.ign.fr/canton#attribute_value_5163"
+      },
+      "Fraction d'une commune et de commune(s) entière(s)": {
+       "definition": "",
+       "url": "https://bdtopoexplorer.ign.fr/canton#attribute_value_5165"
+      },
+      "Fraction de commune": {
+       "definition": "",
+       "url": "https://bdtopoexplorer.ign.fr/canton#attribute_value_5164"
+      },
+      "Fractions de plusieurs communes": {
+       "definition": "",
+       "url": "https://bdtopoexplorer.ign.fr/canton#attribute_value_5166"
+      },
+      "Fractions de plusieurs communes et de commune(s) entière(s)": {
+       "definition": "",
+       "url": "https://bdtopoexplorer.ign.fr/canton#attribute_value_5167"
+      },
+      "NR": {
+       "definition": "Indique que le canton est fictif. Cela concerne la Ville de Paris, la Métropole de Lyon, la Martinique, la Guyane, Saint-Pierre-et-Miquelon, Saint-Barthélemy et Saint-Martin.",
+       "url": "https://bdtopoexplorer.ign.fr/canton#attribute_value_5168"
+      }
+     }
+    },
+    "codes_insee_des_arrondissements": {
+     "label": "Codes Insee des arrondissements",
+     "definition": "Liste des codes officiels attribués par l’Insee aux arrondissements dont une partie constitue le canton.",
+     "url": "https://bdtopoexplorer.ign.fr/canton#attribute_1630",
+     "values": {}
+    }
+   },
+   "theme": "Administratif"
+  },
+  "arrondissement": {
+   "label": "Arrondissement",
+   "definition": "L'arrondissement est une circonscription administrative de l'État dont le chef-lieu est la sous-préfecture. Le sous-préfet est chargé de son administration ; il relaie le préfet en assurant le contrôle administratif des communes de son arrondissement. Le libellé de l'arrondissement est le plus souvent celui du chef-lieu. L'arrondissement est une subdivision du département. Depuis le redécoupage cantonal lié aux élections départementales de mars 2015, l'arrondissement n’est plus un regroupement de cantons mais de communes. Source Insee",
+   "url": "https://bdtopoexplorer.ign.fr/arrondissement",
+   "attributes": {
+    "code_insee_de_l_arrondissement": {
+     "label": "Code Insee de l'arrondissement",
+     "definition": "Code INSEE de l' Arrondissement .",
+     "url": "https://bdtopoexplorer.ign.fr/arrondissement#attribute_208",
+     "values": {}
+    },
+    "numero_de_l_arrondissement": {
+     "label": "Numéro de l'arrondissement",
+     "definition": "Il s’agit du numéro officiel attribué par l’Insee à l' Arrondissement : c'est un chiffre.",
+     "url": "https://bdtopoexplorer.ign.fr/arrondissement#attribute_1627",
+     "values": {}
+    },
+    "liens_vers_autorite_administrative": {
+     "label": "Liens vers autorité administrative",
+     "definition": "Lien vers (clé absolue) l'objet Zone d'activité ou d'intérêt de Nature=\"Sous-préfecture\" de l'arrondissement.",
+     "url": "https://bdtopoexplorer.ign.fr/arrondissement#attribute_212",
+     "values": {}
+    }
+   },
+   "theme": "Administratif"
+  },
+  "epci": {
+   "label": "EPCI",
+   "definition": "Les établissements publics de coopération intercommunale (EPCI) sont des structures administratives permettant à plusieurs communes d’exercer des compétences en commun. Ils sont soumis à des règles communes, homogènes et comparables à celles de collectivités locales. Les communautés urbaines, communautés d'agglomération, communautés de communes, syndicats d'agglomération nouvelle, syndicats de communes et les syndicats mixtes sont des EPCI. Source Insee",
+   "url": "https://bdtopoexplorer.ign.fr/epci",
+   "attributes": {
+    "nature": {
+     "label": "Nature",
+     "definition": "Nature de l'EPCI",
+     "url": "https://bdtopoexplorer.ign.fr/epci#attribute_228",
+     "values": {
+      "Communauté d'agglomération": {
+       "definition": "EPCI regroupant plusieurs communes formant, à la date de sa création, un ensemble de plus de 50 000 habitants d'un seul tenant et sans enclave, autour d'une ou plusieurs communes centre de plus de 15 000 habitants. Le seuil démographique de 15 000 habitants ne s'applique pas lorsque la communauté d'agglomération comprend le chef-lieu du Département ou la Commune la plus importante du Département . Le seuil démographique de 50 000 habitants est réduit à 30 000 habitants lorsque la communauté d'agglomération comprend le chef-lieu du Département .",
+       "url": "https://bdtopoexplorer.ign.fr/epci#attribute_value_64"
+      },
+      "Communauté de communes": {
+       "definition": "EPCI regroupant plusieurs communes d'un seul tenant et sans enclave. Elle a pour objet d'associer des communes au sein d'un espace de solidarité, en vue de l'élaboration d'un projet commun de développement et d'aménagement de l'espace.",
+       "url": "https://bdtopoexplorer.ign.fr/epci#attribute_value_63"
+      },
+      "Communauté urbaine": {
+       "definition": "EPCI regroupant plusieurs communes d'un seul tenant et sans enclave qui forment, à la date de sa création, un ensemble de plus de 450 000 habitants et qui s'associent au sein d'un espace de solidarité, pour élaborer et conduire ensemble un projet commun de développement urbain et d'aménagement de leur territoire.",
+       "url": "https://bdtopoexplorer.ign.fr/epci#attribute_value_65"
+      },
+      "Etablissement public territorial": {
+       "definition": "Nouvelle structure administrative créée en 2016 dans le cadre de la création de la Métropole du Grand Paris. Ce sont des EPCI sans fiscalité propre.",
+       "url": "https://bdtopoexplorer.ign.fr/epci#attribute_value_66"
+      },
+      "Métropole": {
+       "definition": "EPCI qui forment, à la date de la création de la métropole, un ensemble de plus de 400 000 habitants et dans le périmètre desquels se trouve le chef-lieu de Région ; les EPCI , centres d'une zone d'emplois de plus de 400 000 habitants, qui en font la demande. Toutefois la métropole de Lyon n'est pas (en dépit de son nom) réellement une métropole ni même un EPCI , mais une Collectivité territoriale à statut particulier qui (au-delà des autres caractéristiques des métropoles) se substitue à la Collectivité territoriale de son ancien Département .",
+       "url": "https://bdtopoexplorer.ign.fr/epci#attribute_value_67"
+      }
+     }
+    },
+    "codes_insee_des_communes_membres": {
+     "label": "Codes Insee des communes membres",
+     "definition": "Liste des codes Insee des communes membres de l' EPCI séparés par '/'.",
+     "url": "https://bdtopoexplorer.ign.fr/epci#attribute_231",
+     "values": {}
+    },
+    "codes_insee_des_departements_membres": {
+     "label": "Codes Insee des départements membres",
+     "definition": "Liste des codes Insee des départements dont les communes sont membres de l' EPCI .",
+     "url": "https://bdtopoexplorer.ign.fr/epci#attribute_1631",
+     "values": {}
+    },
+    "liens_vers_autorite_administrative": {
+     "label": "Liens vers autorité administrative",
+     "definition": "Lien vers le siège de l'autorité administrative de l' EPCI modélisé par une Zone d'activité ou d'intérêt de Nature=\"Siège d'EPCI\".",
+     "url": "https://bdtopoexplorer.ign.fr/epci#attribute_232",
+     "values": {}
+    }
+   },
+   "theme": "Administratif"
+  },
+  "departement": {
+   "label": "Département",
+   "definition": "Création de la Révolution (loi du 22 décembre 1789), le département est une circonscription administrative de l’État. Le Préfet représente les différentes administrations de l’État au niveau territorial. C’est aussi, par la loi du 10 août 1871, une collectivité locale autonome avec un organe délibérant et un exécutif élus. La loi du 17 mai 2013 redéfinit l’élection des assemblées départementales, anciennement conseils généraux, appelées désormais conseils départementaux. Les cantons sont les circonscriptions qui servent de cadre à l’élection des conseils départementaux Le conseil départemental est élu pour 6 ans au suffrage universel ; il élit à son tour un président, exécutif du département qui prépare et exécute les délibérations du conseil départemental, gère le budget et dirige le personnel. Les compétences des départements sont actuellement en cours de discussion à l’Assemblée Nationale, dans le cadre de la loi portant « Nouvelle Organisation Territoriale de la République ». Depuis avril 2011, on compte 101 départements (dont 5 d'outre-mer). Un département appartient à une région et une seule. Chaque département d'outre-mer constitue à lui seul une région. Source Insee",
+   "url": "https://bdtopoexplorer.ign.fr/departement",
+   "attributes": {
+    "code_insee": {
+     "label": "Code Insee du département",
+     "definition": "Il s’agit du numéro officiel attribué par l’Insee au Département : il est composé de 2 ou 3 caractères.",
+     "url": "https://bdtopoexplorer.ign.fr/departement#attribute_219",
+     "values": {}
+    },
+    "code_insee_de_la_region": {
+     "label": "Code Insee de la région",
+     "definition": "Code Insee de la Région .",
+     "url": "https://bdtopoexplorer.ign.fr/departement#attribute_220",
+     "values": {}
+    },
+    "liens_vers_autorite_administrative": {
+     "label": "Liens vers autorité administrative",
+     "definition": "Lien vers (clé absolue) de l'objet Zone d'activité ou d'intérêt de Nature='Préfecture' du département concerné.",
+     "url": "https://bdtopoexplorer.ign.fr/departement#attribute_222",
+     "values": {}
+    }
+   },
+   "theme": "Administratif"
   },
   "lieu_dit_non_habite": {
    "label": "Lieu-dit non habité",

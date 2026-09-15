@@ -265,6 +265,10 @@ def resolve_value(spec: Any, feature: dict) -> str | None:
         if n is None:
             return None
         raw = n * float(spec["scale"])
+    if spec.get("year"):
+        # Date de recensement, millésime… : OSM n'attend que l'année.
+        out = format_value(raw)[:4]
+        return out if out.isdigit() else None
     out = format_value(raw, decimals=spec.get("decimals"))
     if "template" in spec:
         out = str(spec["template"]).replace("{value}", out)
@@ -392,6 +396,9 @@ class RuleSet:
     # création des nœuds pour les couches ponctuelles (cf. topology.add_point).
     report_key: str | None = None
     point_mode: str = "standalone"
+    # `area` (way fermé ou multipolygone) ou `boundary` (relation type=boundary,
+    # toujours, comme le veut la convention OSM des limites administratives).
+    polygon_mode: str = "area"
     # Champs écartés hérités de _metadonnees_ign.yaml : leur absence dans une
     # couche donnée n'est pas une anomalie, contrairement à une déclaration locale.
     common_unmapped: frozenset = frozenset()
@@ -420,6 +427,7 @@ class RuleSet:
             unmapped=unmapped,
             report_key=doc.get("report_key"),
             point_mode=doc.get("point_mode", "standalone"),
+            polygon_mode=doc.get("polygon_mode", "area"),
             common_unmapped=common_keys,
             source_path=path,
         )

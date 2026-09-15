@@ -37,6 +37,19 @@
           </div>
         </div>
       </div>
+      <!-- Modules thématiques : chaque entrée ne montre que les couches BD TOPO
+           de son thème (cf. modules.js). Le bouton Cadastre bascule la
+           surcouche parcellaire de la Géoplateforme (cf. fonds.json). -->
+      <div class="fr-header__menu bdf-modules" id="bdf-modules">
+        <div class="fr-container bdf-modules__barre">
+          <nav class="fr-nav" role="navigation" aria-label="Modules thématiques">
+            <ul class="fr-nav__list"></ul>
+          </nav>
+          <p class="bdf-module-compte" hidden aria-live="polite"></p>
+          <button type="button" class="fr-btn fr-btn--sm fr-btn--tertiary bdf-cadastre" aria-pressed="false" disabled
+                  title="Afficher ou masquer le parcellaire cadastral (PCI Express, IGN) en surcouche">Cadastre</button>
+        </div>
+      </div>
     </header>
 
     <div id="id-container"></div>
@@ -49,6 +62,7 @@
 
     <div id="bdtopo-error" hidden style="position:fixed;inset:0;z-index:2000;padding:32px;background:#fff;font:14px/1.6 Marianne,Arial,sans-serif"></div>
 
+    <script src="modules.js"></script>
     <script>
       // Emplacement d'ouverture par défaut : centre de Poitiers, au zoom 17.
       // iD ne charge les données qu'à partir du zoom 16 ; ouvrir plus large
@@ -59,6 +73,10 @@
       }
 
       var container = document.getElementById('id-container');
+      // Documentation BD TOPO Explorer (référence des tags bdtopo:*) et table
+      // des préfixes cleabs → couche, partagée avec les modules thématiques.
+      var DOCS = fetch('bdtopo-docs.json', { cache: 'no-cache' }).then(function (r) { return r.json(); })
+        .catch(function () { return null; });
       var script = document.createElement('script');
       script.src = 'iD.min.js';
       script.onload = demarrer;
@@ -91,14 +109,13 @@
 
         context.init();
 
-        // Les limites administratives ne sont pas converties : laisser le
-        // filtre actif éviterait un menu trompeur.
-        var q = iD.utilStringQs(window.location.hash);
-        if (!q.hasOwnProperty('disable_features')) {
-          context.features().disable('boundaries');
-        }
-
         brancherDocumentationBdTopo(context);
+
+        DOCS.then(function (docs) {
+          if (window.bdfModules) {
+            bdfModules.init(context, docs && docs.prefixes, document.getElementById('bdf-modules'));
+          }
+        });
 
         window.bdtopoContext = context;  // utile au diagnostic depuis la console
       }
@@ -118,9 +135,7 @@
         var service = iD.services && iD.services.osmWikibase;
         if (!service) return;
         var docs = null;
-        fetch('bdtopo-docs.json').then(function (r) { return r.json(); })
-          .then(function (d) { docs = d; })
-          .catch(function () { docs = null; });
+        DOCS.then(function (d) { docs = d; });
 
         var original = service.getDocs;
         service.getDocs = function (params, callback) {

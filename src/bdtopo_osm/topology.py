@@ -65,6 +65,7 @@ class OsmBuilder:
         self.stats = {
             "ways_split": 0,
             "multipolygons": 0,
+            "boundaries": 0,
             "closed_ways": 0,
             "shared_nodes": 0,
             "empty_geometries": 0,
@@ -161,18 +162,25 @@ class OsmBuilder:
             created.extend(self._emit_way_chain(node_ids, tags))
         return created
 
-    def add_polygon(self, geom: BaseGeometry, tags: dict[str, str]) -> tuple[str, int] | None:
+    def add_polygon(
+        self, geom: BaseGeometry, tags: dict[str, str], mode: str = "area"
+    ) -> tuple[str, int] | None:
         """Crée un way fermé, ou une relation multipolygon si nécessaire.
 
         Une relation s'impose dès qu'il y a un trou, plusieurs parties, ou un
-        contour trop long pour tenir dans un seul way.
+        contour trop long pour tenir dans un seul way. En mode `boundary`, la
+        relation est systématique et typée `boundary` : c'est la convention OSM
+        des limites administratives, et c'est à elle qu'iD reconnaît une limite
+        (filtre « boundaries », rendu des ways membres). Les anneaux restent
+        propres à chaque entité — les limites communes à deux communes ne sont
+        pas mutualisées (arbitrage « polygones simples »).
         """
         parts = _polygon_parts(geom)
         if not parts:
             self.stats["empty_geometries"] += 1
             return None
 
-        simple = len(parts) == 1 and not parts[0][1]
+        simple = mode == "area" and len(parts) == 1 and not parts[0][1]
         if simple:
             ring_nodes = self._nodes_for(parts[0][0])
             if 4 <= len(ring_nodes) <= MAX_WAY_NODES:
@@ -194,8 +202,9 @@ class OsmBuilder:
             return None
 
         relation_id = self._allocate("relation")
-        self._put_relation(relation_id, members, {"type": "multipolygon", **tags})
-        self.stats["multipolygons"] += 1
+        relation_type = "boundary" if mode == "boundary" else "multipolygon"
+        self._put_relation(relation_id, members, {"type": relation_type, **tags})
+        self.stats["boundaries" if mode == "boundary" else "multipolygons"] += 1
         return ("relation", relation_id)
 
     # -------------------------------------------------------------- internes

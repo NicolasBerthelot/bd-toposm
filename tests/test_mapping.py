@@ -295,3 +295,41 @@ def test_une_maison_n_est_pas_un_lieu_de_culte():
     eglise = rules.apply({"cleabs": "B2", "nature": "Eglise", "usage_1": "Religieux"})
     assert eglise["building"] == "church"
     assert eglise["amenity"] == "place_of_worship"
+
+
+# ------------------------------------------------------- limites administratives
+
+
+def test_commune_devient_limite_administrative():
+    rules = RuleSet.load(RULES_DIR / "commune.yaml")
+    assert rules.polygon_mode == "boundary"
+    tags = rules.apply({
+        "cleabs": "COMMUNE_0000000009748797", "code_insee": "86194", "nom_officiel": "Poitiers",
+        "population": 90240, "date_du_recensement": "2023-01-01 00:00:00",
+        "organisme_recenseur": "INSEE", "code_postal": "86000", "code_siren": "218601945",
+        "chef_lieu_de_departement": True, "chef_lieu_d_arrondissement": False,
+    })
+    assert tags["boundary"] == "administrative" and tags["admin_level"] == "8"
+    assert tags["ref:INSEE"] == "86194" and tags["name"] == "Poitiers"
+    assert tags["population"] == "90240" and tags["population:date"] == "2023"
+    assert tags["source:population"] == "INSEE"
+    assert tags["bdtopo:chef_lieu_de_departement"] == "yes"
+    assert "bdtopo:chef_lieu_d_arrondissement" not in tags
+
+
+def test_commune_sans_population_ne_date_rien():
+    rules = RuleSet.load(RULES_DIR / "commune.yaml")
+    tags = rules.apply({"cleabs": "C", "population": 0, "date_du_recensement": "2023-01-01"})
+    assert "population" not in tags and "population:date" not in tags
+
+
+def test_epci_nature_vers_local_authority():
+    rules = RuleSet.load(RULES_DIR / "epci.yaml")
+    tags = rules.apply({"cleabs": "E", "nature": "Communauté urbaine", "nom_officiel": "CU du Grand Poitiers"})
+    assert tags["boundary"] == "local_authority"
+    assert tags["local_authority:FR"] == "CU"
+
+
+def test_annee_extraite_d_une_date():
+    assert resolve_value({"from": "d", "year": True}, {"d": "2023-01-01 00:00:00"}) == "2023"
+    assert resolve_value({"from": "d", "year": True}, {"d": "n/a"}) is None

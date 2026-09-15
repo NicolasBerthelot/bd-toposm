@@ -3,6 +3,21 @@
 
   "loading_auth": "Connexion à BD France Édition…",
 
+  "feature.module_voirie.description": "Module : Réseau routier",
+  "feature.module_voirie.tooltip": "Tronçons de route (module thématique de la barre d'en-tête)",
+  "feature.module_bati.description": "Module : Bâti",
+  "feature.module_bati.tooltip": "Bâtiments, constructions, réservoirs",
+  "feature.module_hydro.description": "Module : Hydrographie",
+  "feature.module_hydro.tooltip": "Cours d'eau, plans d'eau, détails hydrographiques",
+  "feature.module_admin.description": "Module : Limites administratives",
+  "feature.module_admin.tooltip": "Communes, cantons, arrondissement, EPCI, département",
+  "feature.module_transport.description": "Module : Transports",
+  "feature.module_transport.tooltip": "Voies ferrées, équipements de transport, aérodromes",
+  "feature.module_energie.description": "Module : Énergie",
+  "feature.module_energie.tooltip": "Lignes électriques, pylônes, postes",
+  "feature.module_territoire.description": "Module : Occupation du sol",
+  "feature.module_territoire.tooltip": "Végétation, lieux-dits, zones d'activité, sports, cimetières, espaces protégés",
+
   "splash.welcome": "Bienvenue sur BD France Édition",
   "splash.text": "Instance de démonstration : les données de la BD France (IGN) converties au modèle OpenStreetMap, éditables avec l'éditeur iD. Version {version} d'iD. Ce service est sans lien avec openstreetmap.org — rien de ce qui est enregistré ici n'y est envoyé.",
   "splash.privacy": "{updateMessage} Instance locale : aucune donnée personnelle n'est collectée, tous les contributeurs partagent le même utilisateur « bdtopo ».",

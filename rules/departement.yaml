@@ -1,0 +1,21 @@
+layer: departement
+description: >-
+  Départements → relations `type=boundary` + `boundary=administrative` +
+  `admin_level=6`. 101 en France.
+
+report_key: admin_level
+polygon_mode: boundary
+
+rules:
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+      boundary: administrative
+      admin_level: "6"
+      name: {from: nom_officiel}
+      "ref:INSEE": {from: code_insee}
+      "ref:FR:SIREN": {from: code_siren}
+
+unmapped:
+  code_insee_de_la_region: Rattachement hiérarchique, porté par la géométrie.
+  liens_vers_autorite_administrative: Lien interne vers la préfecture (zone_d_activite_ou_d_interet).

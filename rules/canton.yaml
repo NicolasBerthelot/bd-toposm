@@ -1,0 +1,25 @@
+layer: canton
+description: >-
+  Cantons → relations `type=boundary` + `boundary=political` +
+  `political_division=canton`. Circonscriptions électorales départementales,
+  pas des collectivités : OSM les range sous `political`, pas `administrative`.
+  2 054 en France, 8 intersectant Poitiers.
+
+report_key: political_division
+polygon_mode: boundary
+
+rules:
+  - set:
+      source: "IGN BD TOPO® 3.5"
+      "ref:FR:IGN:cleabs": "{cleabs}"
+      boundary: political
+      political_division: canton
+      name: {from: nom_officiel}
+      "ref:INSEE": {from: code_insee}
+      "bdtopo:composition_du_canton": {from: composition_du_canton}
+
+unmapped:
+  numero_du_canton: Deux derniers chiffres de `code_insee`, redondant.
+  code_insee_du_departement: Rattachement hiérarchique, porté par la géométrie.
+  code_insee_de_la_region: Idem.
+  codes_insee_des_arrondissements: Idem.

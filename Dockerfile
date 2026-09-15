@@ -27,7 +27,7 @@ RUN mkdir -p web/id \
 # DSFR (police Marianne + feuille de style) depuis le paquet npm officiel.
 # Même logique que pour iD : récupéré à la construction, jamais versionné.
 RUN mkdir -p web/dsfr  && V=$(curl -fsSL https://registry.npmjs.org/@gouvfr/dsfr/latest | python -c "import sys,json;print(json.load(sys.stdin)['version'])")  && curl -fsSL "https://registry.npmjs.org/@gouvfr/dsfr/-/dsfr-$V.tgz"     | tar -xz -C web/dsfr --strip-components=2 package/dist/dsfr.min.css package/dist/fonts package/dist/icons/system
-COPY web/bdfrance.css web/locale-fr.json web/bdtopo-docs.json ./web/
+COPY web/bdfrance.css web/locale-fr.json web/bdtopo-docs.json web/modules.js web/fonds.json ./web/
 
 # Base de démonstration (Poitiers, socle complet). Sur un disque éphémère,
 # chaque redémarrage repart de cet état : c'est le comportement annoncé.

@@ -316,3 +316,135 @@ def test_lecture_unitaire_et_full(client):
 
     assert client.get("/api/0.6/way/999999.json").status_code == 404
     assert client.get("/api/0.6/node/1/full.json").status_code == 404
+
+
+# ---------------------------------------------------- filtrage par couche
+
+
+@pytest.fixture
+def db_couches(tmp_path):
+    """Route, bâtiment troué, commune (relation boundary) et un point créé
+    « à la main » (sans provenance), tous dans l'emprise de test."""
+    builder = MemoryBuilder()
+    (kind, wid), = [("way", w) for w in builder.add_linestring(
+        LineString([(0.05, 0.05), (0.35, 0.35)]),
+        {"highway": "residential", "ref:FR:IGN:cleabs": "TRONROUT1"},
+    )]
+    builder.record_provenance(kind, wid, "troncon_de_route", {})
+    kind, rid = builder.add_polygon(
+        Polygon(
+            [(0.1, 0.1), (0.4, 0.1), (0.4, 0.4), (0.1, 0.4), (0.1, 0.1)],
+            [[(0.2, 0.2), (0.3, 0.2), (0.3, 0.3), (0.2, 0.3), (0.2, 0.2)]],
+        ),
+        {"building": "yes", "ref:FR:IGN:cleabs": "BATIMENT1"},
+    )
+    builder.record_provenance(kind, rid, "batiment", {})
+    kind, cid = builder.add_polygon(
+        Polygon([(0.0, 0.0), (0.4, 0.0), (0.4, 0.4), (0.0, 0.4), (0.0, 0.0)]),
+        {"boundary": "administrative", "admin_level": "8", "ref:FR:IGN:cleabs": "COMMUNE_1"},
+        mode="boundary",
+    )
+    builder.record_provenance(kind, cid, "commune", {})
+    from shapely.geometry import Point
+    builder.add_point(Point(0.15, 0.15), {"amenity": "bench"})  # sans provenance
+
+    path = tmp_path / "couches.db"
+    con = store.connect(path)
+    store.load(con, builder, source_label="test")
+    con.close()
+    return path
+
+
+def _resume(result):
+    ways_tagged = sum(1 for w in result.ways if w["tags"])
+    return {
+        "relations": sorted(r["tags"].get("ref:FR:IGN:cleabs", "?") for r in result.relations),
+        "ways": len(result.ways),
+        "ways_tagues": ways_tagged,
+        "nodes": len(result.nodes),
+        "points": sorted(n["tags"].get("amenity", "?") for n in result.nodes if n["tags"]),
+    }
+
+
+def test_filtre_par_couche_ne_garde_que_le_module(db_couches):
+    con = store.connect(db_couches, read_only=True)
+    tout = _resume(store.query_map(con, BBOX))
+    assert tout["relations"] == ["BATIMENT1", "COMMUNE_1"] and tout["ways"] == 4
+
+    admin = _resume(store.query_map(con, BBOX, {"commune"}))
+    # la relation commune, son way membre (sans provenance propre), ses nœuds,
+    # et le banc créé à la main — jamais la route ni le bâtiment
+    assert admin["relations"] == ["COMMUNE_1"]
+    assert admin["ways"] == 1 and admin["ways_tagues"] == 0
+    assert admin["points"] == ["bench"]
+    assert admin["nodes"] == 4 + 1
+
+    routes = _resume(store.query_map(con, BBOX, {"troncon_de_route"}))
+    assert routes["relations"] == [] and routes["ways"] == 1 and routes["ways_tagues"] == 1
+
+    bati = _resume(store.query_map(con, BBOX, {"batiment", "commune"}))
+    assert bati["relations"] == ["BATIMENT1", "COMMUNE_1"] and bati["ways"] == 3
+    con.close()
+
+
+def test_api_filtre_par_parametre_ou_cookie(db_couches):
+    client = TestClient(create_app(db_couches))
+    bbox = ",".join(str(v) for v in BBOX)
+
+    def cleabs(resp):
+        return sorted(e["tags"]["ref:FR:IGN:cleabs"] for e in resp.json()["elements"]
+                      if e.get("tags", {}).get("ref:FR:IGN:cleabs"))
+
+    assert cleabs(client.get(f"/api/0.6/map.json?bbox={bbox}")) == ["BATIMENT1", "COMMUNE_1", "TRONROUT1"]
+    assert cleabs(client.get(f"/api/0.6/map.json?bbox={bbox}&layers=commune")) == ["COMMUNE_1"]
+    # le cookie posé par les modules (virgule encodée), supplanté par `layers=`
+    client.cookies.set("bdf_layers", "commune%2Ctroncon_de_route")
+    assert cleabs(client.get(f"/api/0.6/map.json?bbox={bbox}")) == ["COMMUNE_1", "TRONROUT1"]
+    assert cleabs(client.get(f"/api/0.6/map.json?bbox={bbox}&layers=batiment")) == ["BATIMENT1"]
+
+
+def test_chemin_sans_index_equivalent(db_couches):
+    """Une base antérieure aux index de ways (ouverte en lecture seule) doit
+    répondre la même chose par le chemin des nœuds."""
+    con = store.connect(db_couches)
+    assert store.has_spatial_index(con)
+    with_index = {
+        key: _resume(store.query_map(con, BBOX, layers))
+        for key, layers in (("tout", None), ("admin", {"commune"}), ("routes", {"troncon_de_route"}))
+    }
+    con.execute("DROP TABLE way_index")
+    con.execute("DROP TABLE point_index")
+    con.commit()
+    assert not store.has_spatial_index(con)
+    for key, layers in (("tout", None), ("admin", {"commune"}), ("routes", {"troncon_de_route"})):
+        assert _resume(store.query_map(con, BBOX, layers)) == with_index[key], key
+    # et la mise à niveau les reconstruit
+    store.ensure_schema(con)
+    assert store.has_spatial_index(con)
+    con.close()
+
+
+def test_emprise_du_way_suit_ses_noeuds(db_couches):
+    """Déplacer un nœud (osmChange) doit mettre à jour l'index du way."""
+    from bdtopo_osm import edit
+
+    con = store.connect(db_couches)
+    way_id = con.execute(
+        "SELECT element_id FROM idmap WHERE cleabs = 'TRONROUT1'"
+    ).fetchone()[0]
+    node_id = con.execute(
+        "SELECT node_id FROM way_nodes WHERE way_id = ? ORDER BY seq DESC LIMIT 1", (way_id,)
+    ).fetchone()[0]
+    loin = (3.0, 3.0, 3.4, 3.4)
+    assert not [w for w in store.query_map(con, loin).ways]
+
+    cs = store.open_changeset(con, 1, {})
+    payload = (
+        '<osmChange version="0.6"><modify>'
+        f'<node id="{node_id}" lon="3.2" lat="3.2" version="1" changeset="{cs}"/>'
+        "</modify></osmChange>"
+    ).encode()
+    edit.apply_osmchange(con, payload, cs)
+    assert [w["id"] for w in store.query_map(con, loin).ways] == [way_id]
+    assert [w["id"] for w in store.query_map(con, loin, {"troncon_de_route"}).ways] == [way_id]
+    con.close()
